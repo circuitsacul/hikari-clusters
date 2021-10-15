@@ -1,0 +1,35 @@
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "tests",
+]
+
+[tool.black]
+line-length=79
+target_version=['py38']
+
+[tool.poetry]
+name = "hikari-clusters"
+version = "0.1.0"
+description = "Tool for clustering with hikari."
+authors = ["Circuit <circuitsacul@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.8, <3.11"
+hikari = "^2.0.0.dev103"
+websockets = "^10.0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.15.0"
+pytest = "^6.2.5"
+black = "^21.9b0"
+flake8 = "^4.0.1"
+mypy = "^0.910"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
