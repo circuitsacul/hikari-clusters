@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import multiprocessing
+import signal
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
@@ -32,7 +33,7 @@ from websockets.exceptions import ConnectionClosed
 from hikari_clusters import payload
 from hikari_clusters.info_classes import ClusterInfo, ServerInfo
 
-from . import log, ui
+from . import log
 from .commands import CommandGroup
 from .events import EventGroup
 from .ipc_client import IpcClient
@@ -69,7 +70,6 @@ class Server:
         cluster_launcher: ClusterLauncher,
     ):
         self.tasks = TaskManager(LOG)
-        self.ui = ui.App(self.stop)
 
         self.ipc = IpcClient(
             IpcClient.get_uri(host, port),
@@ -101,7 +101,11 @@ class Server:
     def run(self):
         """Run the server, wait for the server to stop, and then shutdown."""
 
+        def sigstop(*args, **kwargs):
+            self.stop()
+
         loop = asyncio.get_event_loop()
+        loop.add_signal_handler(signal.SIGINT, sigstop)
         loop.run_until_complete(self.start())
         loop.run_until_complete(self.join())
         loop.run_until_complete(self.close())
@@ -114,10 +118,6 @@ class Server:
 
         self.stop_future = asyncio.Future()
         self.tasks.create_task(self._broadcast_server_info_loop())
-        self.tasks.create_task(
-            self.ui.run(), allow_cancel=False, allow_wait=False
-        )
-        self.tasks.create_task(self._update_display_loop())
         await self.ipc.start()
 
     async def join(self):
@@ -131,16 +131,11 @@ class Server:
     async def close(self):
         """Shutdown the server and all clusters that belong to this server."""
 
-        for c in self.clusters:
-            await self.ipc.send_command([c.uid], "cluster_stop")
-
         self.ipc.stop()
         await self.ipc.close()
 
         self.tasks.cancel_all()
         await self.tasks.wait_for_all()
-
-        self.ui.stop()
 
     def stop(self):
         """Tell the server to stop."""
@@ -162,25 +157,6 @@ class Server:
                 )
             except ConnectionClosed:
                 pass
-            await asyncio.sleep(1)
-
-    async def _update_display_loop(self):
-        class TextPrinter:
-            text = ""
-
-            def a(self, t: str, end: str = "\n"):
-                self.text += t + end
-
-        while True:
-            t = TextPrinter()
-
-            t.a(f"Server {self.ipc.uid} connected to {self.ipc.uri}.")
-            for c in self.clusters:
-                status = "Ready" if c.ready else "Connecting..."
-                t.a(f" - Cluster {c.cluster_id} ({c.uid}): {status}")
-
-            self.ui.set_app_info_text(t.text)
-
             await asyncio.sleep(1)
 
 

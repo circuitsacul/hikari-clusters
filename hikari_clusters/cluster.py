@@ -23,7 +23,7 @@
 from __future__ import annotations
 
 import asyncio
-import sys
+import signal
 from dataclasses import asdict
 from typing import Any, Type
 
@@ -40,32 +40,6 @@ __all__ = (
     "Cluster",
     "ClusterLauncher",
 )
-
-
-class RecordStdout:
-    """Redirects sys.stdout to a list, which the :class:`~Cluster`
-    then sends to the :class:`~server.Server` to be printed."""
-
-    def __init__(self):
-        self.old_stdout = sys.stdout
-        self.records: list[str] = []
-
-    def pop(self) -> list[str]:
-        """Returns the records while simultaneously clearing
-        them from :class:`~RecordStdout`."""
-
-        r = self.records
-        self.records = []
-        return r
-
-    def write(self, text: str):
-        self.records.append(text)
-
-    def flush(self):
-        pass
-
-    def __getattr__(self, name: str):
-        return self.old_stdout.__getattribute__(name)
 
 
 class Cluster(GatewayBot):
@@ -157,7 +131,6 @@ class Cluster(GatewayBot):
         await self.ipc.start()
 
         self.__tasks.create_task(self._broadcast_cluster_info_loop())
-        self.__tasks.create_task(self._broadcast_stdout_loop())
 
         kwargs["shard_count"] = self.shard_count
         kwargs["shard_ids"] = self.shard_ids
@@ -209,22 +182,6 @@ class Cluster(GatewayBot):
                 return
             await asyncio.sleep(1)
 
-    async def _broadcast_stdout_loop(self):
-        while True:
-            await self.ipc.wait_until_ready()
-            # NOTE: stdout is actually a RecordStdout here.
-            tosend: list[str] = sys.stdout.pop()
-            if len(tosend) > 0:
-                try:
-                    await self.ipc.send_event(
-                        [self.server_uid],
-                        "cluster_stdout",
-                        {"data": tosend},
-                    )
-                except ConnectionClosed:
-                    return
-            await asyncio.sleep(1)
-
 
 class ClusterLauncher:
     """Provides methods and utilities for launching clusters."""
@@ -249,8 +206,6 @@ class ClusterLauncher:
     ):
         """Should be called in a new :class:`~multiprocessing.Process`"""
 
-        sys.stdout = RecordStdout()  # type: ignore
-
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -262,6 +217,11 @@ class ClusterLauncher:
             server_uid,
             self.bot_init_kwargs,
         )
+
+        def sigstop(*args, **kwargs):
+            bot.stop()
+
+        loop.add_signal_handler(signal.SIGINT, sigstop)
 
         loop.run_until_complete(bot.start())
         loop.run_until_complete(bot.join())

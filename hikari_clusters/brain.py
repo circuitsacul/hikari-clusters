@@ -23,8 +23,9 @@
 from __future__ import annotations
 
 import asyncio
+import signal
 
-from . import log, ui
+from . import log
 from .ipc_client import IpcClient
 from .ipc_server import IpcServer
 from .task_manager import TaskManager
@@ -75,8 +76,6 @@ class Brain:
         self.server = IpcServer(host, port, token)
         self.ipc = IpcClient(IpcClient.get_uri(host, port), token, LOG)
 
-        self.ui = ui.App(self.stop)
-
         self.stop_future: asyncio.Future | None = None
 
         self._waiting_for: tuple[int, int] | None = None
@@ -126,7 +125,11 @@ class Brain:
     def run(self):
         """Run the brain, wait for the brain to stop, then cleanup."""
 
+        def sigstop(*args, **kwargs):
+            self.stop()
+
         loop = asyncio.get_event_loop()
+        loop.add_signal_handler(signal.SIGINT, sigstop)
         loop.run_until_complete(self.start())
         loop.run_until_complete(self.join())
         loop.run_until_complete(self.close())
@@ -138,10 +141,6 @@ class Brain:
         """
         self.stop_future = asyncio.Future()
         self.tasks.create_task(self._send_brain_uid_loop())
-        self.tasks.create_task(
-            self.ui.run(), allow_cancel=False, allow_wait=False
-        )
-        self.tasks.create_task(self._update_display_loop())
         self.tasks.create_task(self._main_loop())
         await self.server.start()
         await self.ipc.start()
@@ -162,8 +161,6 @@ class Brain:
 
         self.tasks.cancel_all()
         await self.tasks.wait_for_all()
-
-        self.ui.stop()
 
     def stop(self):
         """Tells the brain to stop."""
@@ -221,29 +218,3 @@ class Brain:
             )
 
             self.waiting_for = (server_uid, min(shards))
-
-    async def _update_display_loop(self):
-        class TextPrinter:
-            text = ""
-
-            def a(self, t: str, end: str = "\n"):
-                self.text += t + end
-
-        while True:
-            t = TextPrinter()
-
-            t.a(f"Brain at {self.ipc.uri}")
-
-            for s in self.ipc.servers.values():
-                t.a(f" - Server {s.uid}")
-                for cid in s.cluster_uids:
-                    try:
-                        c = self.ipc.clusters[cid]
-                    except KeyError:
-                        continue
-                    status = "Ready" if c.ready else "Connecting..."
-                    t.a(f"   - Cluster {c.cluster_id} ({c.uid}): {status}")
-
-            self.ui.set_app_info_text(t.text)
-
-            await asyncio.sleep(1)
