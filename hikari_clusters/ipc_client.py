@@ -27,9 +27,9 @@ import json
 from typing import Any, Iterable
 
 from websockets import client
-from websockets.exceptions import ConnectionClosedOK
+from websockets.exceptions import ConnectionClosed, ConnectionClosedOK
 
-from . import log, payload
+from . import close_codes, exceptions, log, payload
 from .callbacks import CallbackHandler, NoResponse
 from .commands import CommandHandler
 from .events import EventGroup, EventHandler
@@ -302,6 +302,9 @@ class IpcClient:
                 await self._recv_loop(ws)
             except ConnectionClosedOK:
                 pass
+            except ConnectionClosed as e:
+                if e.code == close_codes.INVALID_TOKEN:
+                    raise exceptions.InvalidIpcToken
             except asyncio.CancelledError:
                 reconnect = False
             finally:

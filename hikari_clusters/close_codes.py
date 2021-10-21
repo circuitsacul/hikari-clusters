@@ -20,26 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from . import close_codes, commands, events, exceptions, payload
-from .brain import Brain
-from .cluster import Cluster, ClusterLauncher
-from .info_classes import ClusterInfo, ServerInfo
-from .ipc_client import IpcClient
-from .ipc_server import IpcServer
-from .server import Server
-
-__all__ = (
-    "IpcClient",
-    "IpcServer",
-    "Brain",
-    "Cluster",
-    "ClusterLauncher",
-    "Server",
-    "ClusterInfo",
-    "ServerInfo",
-    "payload",
-    "events",
-    "commands",
-    "exceptions",
-    "close_codes",
-)
+INVALID_TOKEN = 3001
+"""When the token passed by the client does not match the token of the
+server."""

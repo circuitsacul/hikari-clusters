@@ -25,10 +25,12 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
+from . import payload
+from .exceptions import CommandAlreadyExists
+
 if TYPE_CHECKING:
     from .ipc_client import IpcClient
 
-from . import payload
 
 __all__ = (
     "CommandHandler",
@@ -104,7 +106,7 @@ class CommandHandler:
 
         for name, func in group.commands.items():
             if name in self.commands:
-                raise RuntimeError(f"Command {name} entered twice.")
+                raise CommandAlreadyExists(name)
             self.commands[name] = func
 
 
@@ -157,7 +159,7 @@ class CommandGroup:
         """
 
         if name in self.commands:
-            raise RuntimeError(f"Command {name} entered twice.")
+            raise CommandAlreadyExists(name)
 
         def decorator(func: IPC_COMMAND) -> IPC_COMMAND:
             self.commands[name] = func

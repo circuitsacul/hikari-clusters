@@ -30,7 +30,7 @@ from typing import Any, Iterable
 from websockets import server
 from websockets.exceptions import ConnectionClosedOK
 
-from . import log, payload
+from . import close_codes, log, payload
 from .task_manager import TaskManager
 
 __all__ = ("IpcServer",)
@@ -158,7 +158,7 @@ class IpcServer:
         req: dict[str, Any] = json.loads(await ws.recv())
         if req.get("token") != self.token:
             LOG.debug("Received invalid token.")
-            await ws.close(3001, "Invalid Token")
+            await ws.close(close_codes.INVALID_TOKEN, "Invalid Token")
             return None
 
         uid = self._next_uid
