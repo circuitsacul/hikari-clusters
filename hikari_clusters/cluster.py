@@ -71,9 +71,6 @@ class Cluster(GatewayBot):
         server_uid: int,
         init_kwargs: dict[str, Any],
     ):
-        init_kwargs.setdefault("allow_color", False)
-        init_kwargs.setdefault("banner", None)
-
         super().__init__(**init_kwargs)
 
         self.shard_ids = shard_ids
