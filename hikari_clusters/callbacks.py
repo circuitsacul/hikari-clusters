@@ -95,7 +95,7 @@ class CallbackHandler:
 
     def __init__(self):
         self.callbacks: dict[int, Callback] = {}
-        self._curr_cbk = 0
+        self._curr_cbk: int = 0
 
     @property
     def next_cbk(self) -> int:
