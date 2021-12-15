@@ -25,4 +25,4 @@ from cluster import LAUNCHER
 from hikari_clusters import Server
 
 if __name__ == "__main__":
-    Server("localhost", 8765, "token", LAUNCHER).run()
+    Server("localhost", 8765, "ipc token", LAUNCHER).run()

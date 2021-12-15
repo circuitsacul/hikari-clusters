@@ -30,4 +30,4 @@ class MyBot(Cluster):
         # load modules & events here
 
 
-LAUNCHER = ClusterLauncher(MyBot, bot_init_kwargs={"token": "token"})
+LAUNCHER = ClusterLauncher(MyBot, bot_init_kwargs={"token": "discord token"})

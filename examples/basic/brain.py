@@ -23,4 +23,4 @@
 from hikari_clusters import Brain
 
 if __name__ == "__main__":
-    Brain("localhost", 8765, "token", 2, 4, 4).run()
+    Brain("localhost", 8765, "ipc token", 2, 4, 4).run()
