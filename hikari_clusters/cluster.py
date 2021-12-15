@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import asyncio
+import pathlib
 import signal
 from dataclasses import asdict
 from typing import Any, Type
@@ -69,6 +70,7 @@ class Cluster(GatewayBot):
         shard_ids: list[int],
         shard_count: int,
         server_uid: int,
+        certificate_path: pathlib.Path | None,
         init_kwargs: dict[str, Any],
     ):
         super().__init__(**init_kwargs)
@@ -87,6 +89,7 @@ class Cluster(GatewayBot):
             self.logger,
             reconnect=False,
             cmd_kwargs={"cluster": self},
+            certificate_path=certificate_path,
         )
         self.ipc.commands.include(_C)
         self.__tasks = TaskManager(self.logger)
@@ -200,6 +203,7 @@ class ClusterLauncher:
         shard_ids: list[int],
         shard_count: int,
         server_uid: int,
+        certificate_path: pathlib.Path | None,
     ):
         """Should be called in a new :class:`~multiprocessing.Process`"""
 
@@ -212,6 +216,7 @@ class ClusterLauncher:
             shard_ids,
             shard_count,
             server_uid,
+            certificate_path,
             self.bot_init_kwargs,
         )
 

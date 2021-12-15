@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import pathlib
+import ssl
 from typing import Any, Iterable
 
 from websockets import client
@@ -59,6 +61,8 @@ class IpcClient:
     event_kwargs : dict[str, Any], optional
         Event arguments to pass to :class:`~events.EventHandler`, by
         default None.
+    certificate_path : pathlib.Path, optional
+        Required for secure (wss) connections, by default None.
     """
 
     def __init__(
@@ -69,6 +73,7 @@ class IpcClient:
         reconnect: bool = True,
         cmd_kwargs: dict[str, Any] | None = None,
         event_kwargs: dict[str, Any] | None = None,
+        certificate_path: pathlib.Path | None = None,
     ):
         self.logger = logger
         self.tasks = TaskManager(logger)
@@ -87,6 +92,13 @@ class IpcClient:
         self.uri = uri
         self.token = token
         self.reconnect = reconnect
+
+        self.ssl_context: ssl.SSLContext | None
+        if certificate_path is not None:
+            self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            self.ssl_context.load_verify_locations(certificate_path)
+        else:
+            self.ssl_context = None
 
         self.client_uids: set[int] = set()
         """A set of all IPC uids representing every connected client."""
@@ -135,7 +147,7 @@ class IpcClient:
         return all_shards
 
     @staticmethod
-    def get_uri(host: str, port: int) -> str:
+    def get_uri(host: str, port: int, use_wss: bool = False) -> str:
         """Utility for converting a host and port to a uri.
 
         Parameters
@@ -144,6 +156,10 @@ class IpcClient:
             The host (e.g. "localhost")
         port : int
             The port (e.g. 1234)
+        use_wss : bool
+            Whether or not to use wss (secure websocket).
+            If set to True, both the Client and the Server
+            must be using a certificate. By default False.
 
         Returns
         -------
@@ -151,7 +167,7 @@ class IpcClient:
             The uri (e.g. "ws://localhost:1234")
         """
 
-        return f"ws://{host}:{port}"
+        return ("wss" if use_wss else "ws") + f"://{host}:{port}"
 
     async def start(self):
         """Start the ipc client.
@@ -292,7 +308,7 @@ class IpcClient:
 
     async def _start(self):
         self.logger.debug("Attempting connection to IPC...")
-        async for ws in client.connect(self.uri):
+        async for ws in client.connect(self.uri, ssl=self.ssl_context):
             reconnect = self.reconnect
             await self._handshake(ws)
             self._ws = ws

@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import asyncio
+import pathlib
 import signal
 
 from . import log
@@ -56,6 +57,8 @@ class Brain:
         The number of clusters each server should run.
     shards_per_clusters : int
         The number of shards each cluster should have.
+    certificate_path : pathlib.Path, optional
+        Required for secure (wss) connections, by default None.
     """
 
     def __init__(
@@ -66,6 +69,7 @@ class Brain:
         total_servers: int,
         clusters_per_server: int,
         shards_per_cluster: int,
+        certificate_path: pathlib.Path | None = None,
     ):
         self.tasks = TaskManager(LOG)
 
@@ -73,8 +77,18 @@ class Brain:
         self.cluster_per_server = clusters_per_server
         self.shards_per_cluster = shards_per_cluster
 
-        self.server = IpcServer(host, port, token)
-        self.ipc = IpcClient(IpcClient.get_uri(host, port), token, LOG)
+        self.server = IpcServer(
+            host,
+            port,
+            token,
+            certificate_path=certificate_path,
+        )
+        self.ipc = IpcClient(
+            IpcClient.get_uri(host, port, certificate_path is not None),
+            token,
+            LOG,
+            certificate_path=certificate_path,
+        )
 
         self.stop_future: asyncio.Future | None = None
 

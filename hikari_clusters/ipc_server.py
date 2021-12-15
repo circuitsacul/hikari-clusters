@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import pathlib
+import ssl
 import traceback
 from typing import Any, Iterable
 
@@ -53,14 +55,31 @@ class IpcServer:
         The port to launch the server on.
     token : str
         The token to require from connecting clients.
+    certificate_path : pathlib.Path, optional
+        The path to a self-signed certificate. Optional,
+        but necessary if you want a secure connection.
+        Highly recommended. By default None.
     """
 
-    def __init__(self, host: str, port: int, token: str):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        token: str,
+        certificate_path: pathlib.Path | None = None,
+    ):
         self.tasks = TaskManager(LOG)
 
         self.host = host
         self.port = port
         self.token = token
+
+        self.ssl_context: ssl.SSLContext | None
+        if certificate_path is not None:
+            self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            self.ssl_context.load_cert_chain(certificate_path)
+        else:
+            self.ssl_context = None
 
         self.stop_future: asyncio.Future | None = None
         self.ready_future: asyncio.Future | None = None
@@ -144,7 +163,9 @@ class IpcServer:
 
     async def _start(self):
         LOG.debug("Server starting up...")
-        async with server.serve(self._serve, self.host, self.port):
+        async with server.serve(
+            self._serve, self.host, self.port, ssl=self.ssl_context
+        ):
             LOG.debug("Server started.")
             self.ready_future.set_result(None)
             await self.stop_future

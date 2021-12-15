@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import multiprocessing
+import pathlib
 import signal
 from dataclasses import asdict
 from typing import TYPE_CHECKING
@@ -60,6 +61,8 @@ class Server:
         The token required by the ipc server.
     cluster_launch : :class:`~ClusterLauncher`
         The cluster launcher.
+    certificate_path : pathlib.Path, optional
+        Required for secure (wss) connections, by default None.
     """
 
     def __init__(
@@ -68,15 +71,18 @@ class Server:
         port: int,
         token: str,
         cluster_launcher: ClusterLauncher,
+        certificate_path: pathlib.Path | None = None,
     ):
         self.tasks = TaskManager(LOG)
 
         self.ipc = IpcClient(
-            IpcClient.get_uri(host, port),
+            IpcClient.get_uri(host, port, certificate_path is not None),
             token,
             LOG,
             cmd_kwargs={"server": self},
+            certificate_path=certificate_path,
         )
+        self.certificate_path = certificate_path
         self.ipc.commands.include(_C)
         self.ipc.events.include(_E)
 
@@ -175,6 +181,7 @@ async def start_cluster(pl: payload.COMMAND, server: Server):
             "shard_ids": pl.data.data["shard_ids"],
             "shard_count": pl.data.data["shard_count"],
             "server_uid": server.ipc.uid,
+            "certificate_path": server.certificate_path,
         },
     )
     p.start()
