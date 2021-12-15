@@ -150,8 +150,13 @@ OPCODES: dict[int, Type[PAYLOAD_DATA]] = {
 }
 
 RESPONSE = Payload[Union[ResponseOk, ResponseTraceback, ResponseNotFound]]
+"""Payload sent in response to a command."""
 COMMAND = Payload[Command]
+"""Payload sent to tell another client to do something and then wait
+for a response."""
 EVENT = Payload[Event]
+"""Payload for sending messages to another client without waiting for a
+response."""
 ANY_PAYLOAD = Payload[PAYLOAD_DATA]
 
 
