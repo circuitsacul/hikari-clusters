@@ -23,4 +23,11 @@
 from hikari_clusters import Brain
 
 if __name__ == "__main__":
-    Brain("localhost", 8765, "ipc token", 2, 4, 4).run()
+    Brain(
+        host="localhost",
+        port=8765,
+        token="ipc token",
+        total_servers=2,
+        clusters_per_server=4,
+        shards_per_cluster=4,
+    ).run()

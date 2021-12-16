@@ -20,9 +20,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from cluster import LAUNCHER
+from hikari_clusters import Cluster, ClusterLauncher, Server
 
-from hikari_clusters import Server
+
+class MyBot(Cluster):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # load modules & events here
+
 
 if __name__ == "__main__":
-    Server("localhost", 8765, "ipc token", LAUNCHER).run()
+    Server(
+        host="localhost",
+        port=8765,
+        token="ipc token",
+        cluster_launcher=ClusterLauncher(
+            MyBot, bot_init_kwargs={"token": "discord token"}
+        ),
+    ).run()
