@@ -1,7 +1,7 @@
 # hikari-clusters
 Clustering for hikari made easy.
 
-![Image](https://us-east-1.tixte.net/uploads/circuit.is-from.space/clustered_bot_structure.jpg)
+![Image](https://us-east-1.tixte.net/uploads/circuit.is-from.space/clustered-bot-structure.jpg)
 
 ## Creating Self-Signed Certificate:
 ```
