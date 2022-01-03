@@ -23,7 +23,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8, <3.11"
-hikari = "^2.0.0.dev104"
+hikari = "^2.0.0.dev105"
 websockets = "^10.1"
 
 [tool.poetry.dev-dependencies]
