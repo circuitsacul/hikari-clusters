@@ -1,5 +1,5 @@
 # hikari-clusters
-Clustering for hikari made easy.
+Clustering for hikari made easy. Run examples with `python -m examples.<example name>` (`python -m examples.basic`)
 
 ![Image](https://us-east-1.tixte.net/uploads/circuit.is-from.space/clustered-bot-structure.jpg)
 
