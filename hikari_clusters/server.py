@@ -72,7 +72,7 @@ class Server:
         token: str,
         cluster_launcher: ClusterLauncher,
         certificate_path: pathlib.Path | None = None,
-    ):
+    ) -> None:
         self.tasks = TaskManager(LOG)
 
         self.ipc = IpcClient(
@@ -104,10 +104,10 @@ class Server:
             if c.server_uid == self.ipc.uid
         ]
 
-    def run(self):
+    def run(self) -> None:
         """Run the server, wait for the server to stop, and then shutdown."""
 
-        def sigstop(*args, **kwargs):
+        def sigstop(*args, **kwargs) -> None:
             self.stop()
 
         loop = asyncio.get_event_loop()
@@ -116,7 +116,7 @@ class Server:
         loop.run_until_complete(self.join())
         loop.run_until_complete(self.close())
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the server.
 
         Returns as soon as all tasks are completed. Returning does not mean
@@ -126,15 +126,16 @@ class Server:
         self.tasks.create_task(self._broadcast_server_info_loop())
         await self.ipc.start()
 
-    async def join(self):
+    async def join(self) -> None:
         """Wait for the server to stop."""
 
+        assert self.stop_future and self.ipc.stop_future
         await asyncio.wait(
             [self.stop_future, self.ipc.stop_future],
             return_when=asyncio.FIRST_COMPLETED,
         )
 
-    async def close(self):
+    async def close(self) -> None:
         """Shutdown the server and all clusters that belong to this server."""
 
         self.ipc.stop()
@@ -143,14 +144,16 @@ class Server:
         self.tasks.cancel_all()
         await self.tasks.wait_for_all()
 
-    def stop(self):
+    def stop(self) -> None:
         """Tell the server to stop."""
 
+        assert self.stop_future
         self.stop_future.set_result(None)
 
-    async def _broadcast_server_info_loop(self):
+    async def _broadcast_server_info_loop(self) -> None:
         while True:
             await self.ipc.wait_until_ready()
+            assert self.ipc.uid
             try:
                 await self.ipc.send_event(
                     self.ipc.client_uids,
@@ -170,7 +173,7 @@ _C = CommandGroup()
 
 
 @_C.add("launch_cluster")
-async def start_cluster(pl: payload.COMMAND, server: Server):
+async def start_cluster(pl: payload.COMMAND, server: Server) -> None:
     assert pl.data.data is not None
     LOG.info(f"Launching Cluster with shard_ids {pl.data.data['shard_ids']}")
     p = multiprocessing.Process(
@@ -192,6 +195,6 @@ _E = EventGroup()
 
 
 @_E.add("cluster_stdout")
-async def handle_cluster_stdout(pl: payload.EVENT):
+async def handle_cluster_stdout(pl: payload.EVENT) -> None:
     assert pl.data.data is not None
     print("".join(pl.data.data["data"]))

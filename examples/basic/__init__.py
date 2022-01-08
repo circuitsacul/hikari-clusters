@@ -19,16 +19,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-from hikari_clusters import Brain
-
-
-def run() -> None:
-    Brain(
-        host="localhost",
-        port=8765,
-        token="ipc token",
-        total_servers=2,
-        clusters_per_server=4,
-        shards_per_cluster=4,
-    ).run()

@@ -67,7 +67,7 @@ class IpcServer:
         port: int,
         token: str,
         certificate_path: pathlib.Path | None = None,
-    ):
+    ) -> None:
         self.tasks = TaskManager(LOG)
 
         self.host = host
@@ -94,7 +94,7 @@ class IpcServer:
         self._current_uid += 1
         return self._current_uid
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the server.
 
         Returns as soon as the tasks have been started. Returning
@@ -106,7 +106,7 @@ class IpcServer:
         self.tasks.create_task(self._send_client_uids_loop())
         self.tasks.create_task(self._start(), allow_cancel=False)
 
-    def stop(self):
+    def stop(self) -> None:
         """Tells the server to stop."""
 
         if self.stop_future is not None and not self.stop_future.done():
@@ -114,25 +114,27 @@ class IpcServer:
         if self.ready_future is not None and not self.ready_future.done():
             self.ready_future.cancel()
 
-    async def close(self):
+    async def close(self) -> None:
         """Shuts the server down."""
 
         self.tasks.cancel_all()
         await self.tasks.wait_for_all()
 
-    async def wait_until_ready(self):
+    async def wait_until_ready(self) -> None:
         """Wait until the server is ready or shutting down."""
 
         assert self.ready_future is not None
         await self.ready_future
 
-    async def join(self):
+    async def join(self) -> None:
         """Wait until the server is shutting down."""
 
         assert self.stop_future is not None
         await self.stop_future
 
-    async def _serve(self, ws: server.WebSocketServerProtocol, path: str):
+    async def _serve(
+        self, ws: server.WebSocketServerProtocol, path: str
+    ) -> None:
         LOG.debug("Client connected.")
         try:
             uid = await self._handshake(ws)
@@ -161,8 +163,10 @@ class IpcServer:
         finally:
             LOG.info(f"Client {uid} disconnected.")
 
-    async def _start(self):
+    async def _start(self) -> None:
         LOG.debug("Server starting up...")
+        assert self.ready_future
+        assert self.stop_future
         async with server.serve(
             self._serve, self.host, self.port, ssl=self.ssl_context
         ):
@@ -194,7 +198,7 @@ class IpcServer:
         LOG.debug(f"Handshake successful, uid {uid}")
         return uid
 
-    async def _send_client_uids_loop(self):
+    async def _send_client_uids_loop(self) -> None:
         await self.wait_until_ready()
         while True:
             data = json.dumps(
@@ -203,7 +207,7 @@ class IpcServer:
             await self._dispatch(list(self.clients.keys()), data)
             await asyncio.sleep(5)
 
-    async def _dispatch(self, to: Iterable[int], msg: str | bytes):
+    async def _dispatch(self, to: Iterable[int], msg: str | bytes) -> None:
         for cid in to:
             client = self.clients.get(cid)
             if not client or not client.open:

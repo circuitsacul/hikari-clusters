@@ -74,7 +74,7 @@ class IpcClient:
         cmd_kwargs: dict[str, Any] | None = None,
         event_kwargs: dict[str, Any] | None = None,
         certificate_path: pathlib.Path | None = None,
-    ):
+    ) -> None:
         self.logger = logger
         self.tasks = TaskManager(logger)
 
@@ -169,7 +169,7 @@ class IpcClient:
 
         return ("wss" if use_wss else "ws") + f"://{host}:{port}"
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the ipc client.
 
         Creates the tasks that will connect to the server
@@ -181,12 +181,12 @@ class IpcClient:
         self.stop_future = asyncio.Future()
         self.ready_future = asyncio.Future()
 
-        def _stop(*args, **kwargs):
+        def _stop(*args, **kwargs) -> None:
             self.stop()
 
         self.tasks.create_task(self._start()).add_done_callback(_stop)
 
-    def stop(self):
+    def stop(self) -> None:
         """Tell the client to stop."""
 
         if self.stop_future is not None and not self.stop_future.done():
@@ -194,25 +194,27 @@ class IpcClient:
         if self.ready_future is not None and not self.ready_future.done():
             self.ready_future.cancel()
 
-    async def close(self):
+    async def close(self) -> None:
         """Disconnect and close the client."""
 
         self.tasks.cancel_all()
         await self.tasks.wait_for_all()
 
-    async def wait_until_ready(self):
+    async def wait_until_ready(self) -> None:
         """Wait until the client is either ready or shutting down."""
 
         assert self.ready_future is not None
         await self.ready_future
 
-    async def join(self):
+    async def join(self) -> None:
         """Wait until the client is shutting down."""
 
         assert self.stop_future is not None
         await self.stop_future
 
-    async def send_not_found_response(self, to: Iterable[int], callback: int):
+    async def send_not_found_response(
+        self, to: Iterable[int], callback: int
+    ) -> None:
         """Respond to a command saying that the command was not found.
 
         Parameters
@@ -227,7 +229,7 @@ class IpcClient:
 
     async def send_ok_response(
         self, to: Iterable[int], callback: int, data: payload.DATA = None
-    ):
+    ) -> None:
         """Respond that the command *function* finished without any problems.
 
         Does not necessarily mean that the command itself finished correctly.
@@ -246,7 +248,7 @@ class IpcClient:
 
     async def send_tb_response(
         self, to: Iterable[int], callback: int, tb: str
-    ):
+    ) -> None:
         """Respond that the command function raised an exception.
 
         Parameters
@@ -263,7 +265,7 @@ class IpcClient:
 
     async def send_event(
         self, to: Iterable[int], name: str, data: payload.DATA = None
-    ):
+    ) -> None:
         """Dispatch an event.
 
         Events are like commands, except that no responses are sent.
@@ -306,8 +308,9 @@ class IpcClient:
             await cb.wait()
         return cb.resps
 
-    async def _start(self):
+    async def _start(self) -> None:
         self.logger.debug("Attempting connection to IPC...")
+        assert self.ready_future
         async for ws in client.connect(self.uri, ssl=self.ssl_context):
             reconnect = self.reconnect
             await self._handshake(ws)
@@ -338,7 +341,7 @@ class IpcClient:
                 else:
                     return
 
-    async def _handshake(self, ws: client.WebSocketClientProtocol):
+    async def _handshake(self, ws: client.WebSocketClientProtocol) -> None:
         self.logger.debug("Attempting handshake...")
         await ws.send(json.dumps({"token": self.token}))
         data: dict[str, Any] = json.loads(await ws.recv())
@@ -346,7 +349,7 @@ class IpcClient:
         self.client_uids = set(data["client_uids"])
         self.logger.debug(f"Handshake successful, uid {self.uid}")
 
-    def _update_clients(self, client_uids: set[int]):
+    def _update_clients(self, client_uids: set[int]) -> None:
         self.client_uids = client_uids
         for sid in list(self.servers.keys()):
             if sid not in self.client_uids:
@@ -365,7 +368,7 @@ class IpcClient:
             else:
                 self.logger.warn("Something's up with clusters_by_cluster_id.")
 
-    async def _recv_loop(self, ws: client.WebSocketClientProtocol):
+    async def _recv_loop(self, ws: client.WebSocketClientProtocol) -> None:
         async for msg in ws:
             self.logger.debug(f"Received message: {msg!s}")
             data: dict[str, Any] = json.loads(msg)
@@ -374,7 +377,7 @@ class IpcClient:
             else:
                 self.tasks.create_task(self._handle_message(data))
 
-    async def _handle_message(self, data: dict[str, Any]):
+    async def _handle_message(self, data: dict[str, Any]) -> None:
         pl: payload.Payload[Any] = payload.deserialize_payload(data)
         if isinstance(pl.data, payload.Command):
             await self.commands.handle_command(pl)
@@ -383,7 +386,9 @@ class IpcClient:
         else:
             self.callbacks.handle_response(pl)
 
-    async def _send(self, to: Iterable[int], pl_data: payload.PAYLOAD_DATA):
+    async def _send(
+        self, to: Iterable[int], pl_data: payload.PAYLOAD_DATA
+    ) -> None:
         assert self.uid is not None
         pl = payload.Payload(
             pl_data.opcode,
@@ -393,7 +398,7 @@ class IpcClient:
         )
         await self._raw_send(json.dumps(pl.serialize()))
 
-    async def _raw_send(self, msg: str):
+    async def _raw_send(self, msg: str) -> None:
         assert self._ws is not None
         await self._ws.send(msg)
 
@@ -402,7 +407,7 @@ _E = EventGroup()
 
 
 @_E.add("set_brain_uid")
-async def set_brain_uid(pl: payload.EVENT, _ipc_client: IpcClient):
+async def set_brain_uid(pl: payload.EVENT, _ipc_client: IpcClient) -> None:
     assert pl.data.data is not None
     uid = pl.data.data["uid"]
     _ipc_client.logger.debug(f"Setting brain uid to {uid}.")
@@ -410,7 +415,9 @@ async def set_brain_uid(pl: payload.EVENT, _ipc_client: IpcClient):
 
 
 @_E.add("set_cluster_info")
-async def update_cluster_info(pl: payload.EVENT, _ipc_client: IpcClient):
+async def update_cluster_info(
+    pl: payload.EVENT, _ipc_client: IpcClient
+) -> None:
     assert pl.data.data is not None
     cinfo = ClusterInfo(**pl.data.data)
     _ipc_client.logger.debug(
@@ -421,7 +428,9 @@ async def update_cluster_info(pl: payload.EVENT, _ipc_client: IpcClient):
 
 
 @_E.add("set_server_info")
-async def update_server_info(pl: payload.EVENT, _ipc_client: IpcClient):
+async def update_server_info(
+    pl: payload.EVENT, _ipc_client: IpcClient
+) -> None:
     assert pl.data.data is not None
     sinfo = ServerInfo(**pl.data.data)
     _ipc_client.logger.debug(f"Updating info for Server {sinfo.uid}")

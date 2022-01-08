@@ -39,7 +39,7 @@ class _TaskWrapper:
         allow_cancel: bool,
         allow_wait: bool,
         t: asyncio.Task,
-    ):
+    ) -> None:
         self.allow_cancel = allow_cancel
         self.allow_wait = allow_wait
         self.t = t
@@ -48,7 +48,7 @@ class _TaskWrapper:
 class TaskManager:
     """Makes asyncio.Task managements slightly easier."""
 
-    def __init__(self, logger: log.Logger):
+    def __init__(self, logger: log.Logger) -> None:
         self.logger = logger
         self._tasks: dict[int, _TaskWrapper] = {}
         self._curr_tid = 0
@@ -113,7 +113,7 @@ class TaskManager:
         t.add_done_callback(callback)
         return t
 
-    def cancel_all(self):
+    def cancel_all(self) -> None:
         """Cancel all tasks that allow cancelling."""
 
         for t in self._tasks.values():
@@ -121,7 +121,7 @@ class TaskManager:
                 t.t.cancel()
         self._remove_finished()
 
-    async def wait_for_all(self, timeout: float = 3.0):
+    async def wait_for_all(self, timeout: float = 3.0) -> None:
         """Wait for all tasks that allow waiting.
 
         Parameters
@@ -141,7 +141,7 @@ class TaskManager:
         await asyncio.wait(to_wait, timeout=timeout)
         self._remove_finished()
 
-    def _remove_finished(self):
+    def _remove_finished(self) -> None:
         for tid, t in list(self._tasks.items()):
             if t.t.done():
                 del self._tasks[tid]

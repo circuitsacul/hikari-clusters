@@ -20,15 +20,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from hikari_clusters import Brain
+import sys
 
+from .brain import run as runbrain
+from .server import run as runserver
 
-def run() -> None:
-    Brain(
-        host="localhost",
-        port=8765,
-        token="ipc token",
-        total_servers=2,
-        clusters_per_server=4,
-        shards_per_cluster=4,
-    ).run()
+if __name__ == "__main__":
+    try:
+        t = sys.argv[1]
+    except IndexError:
+        print('Please specify either "brain" or "server":')
+        print("\tpython -m examples.basic brain/server")
+        exit()
+    if t == "brain":
+        runbrain()
+    elif t == "server":
+        runserver()

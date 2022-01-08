@@ -70,7 +70,7 @@ class Brain:
         clusters_per_server: int,
         shards_per_cluster: int,
         certificate_path: pathlib.Path | None = None,
-    ):
+    ) -> None:
         self.tasks = TaskManager(LOG)
 
         self.total_servers = total_servers
@@ -133,10 +133,10 @@ class Brain:
         return self._waiting_for
 
     @waiting_for.setter
-    def waiting_for(self, value: tuple[int, int] | None):
+    def waiting_for(self, value: tuple[int, int] | None) -> None:
         self._waiting_for = value
 
-    def run(self):
+    def run(self) -> None:
         """Run the brain, wait for the brain to stop, then cleanup."""
 
         def sigstop(*args, **kwargs):
@@ -148,7 +148,7 @@ class Brain:
         loop.run_until_complete(self.join())
         loop.run_until_complete(self.close())
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the brain.
 
         Returns as soon as all tasks have started.
@@ -159,12 +159,13 @@ class Brain:
         await self.server.start()
         await self.ipc.start()
 
-    async def join(self):
+    async def join(self) -> None:
         """Wait for the brain to stop."""
 
+        assert self.stop_future
         await self.stop_future
 
-    async def close(self):
+    async def close(self) -> None:
         """Shuts the brain down."""
 
         self.server.stop()
@@ -176,9 +177,10 @@ class Brain:
         self.tasks.cancel_all()
         await self.tasks.wait_for_all()
 
-    def stop(self):
+    def stop(self) -> None:
         """Tells the brain to stop."""
 
+        assert self.stop_future
         self.stop_future.set_result(None)
 
     def _get_next_cluster_to_launch(self) -> tuple[int, list[int]] | None:
@@ -206,7 +208,7 @@ class Brain:
 
         return s.uid, list(shards_to_launch)[0 : self.shards_per_cluster]
 
-    async def _send_brain_uid_loop(self):
+    async def _send_brain_uid_loop(self) -> None:
         while True:
             await self.ipc.wait_until_ready()
             await self.ipc.send_event(
@@ -214,7 +216,7 @@ class Brain:
             )
             await asyncio.sleep(1)
 
-    async def _main_loop(self):
+    async def _main_loop(self) -> None:
         await self.ipc.wait_until_ready()
         while True:
             await asyncio.sleep(1)

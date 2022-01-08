@@ -49,7 +49,7 @@ class EventHandler:
 
     def __init__(
         self, logger: log.Logger, event_kwargs: dict[str, Any] | None = None
-    ):
+    ) -> None:
         self.events: dict[str, list[IPC_EVENT]] = {}
         self.event_kwargs = event_kwargs or {}
         self.logger = logger
@@ -57,7 +57,7 @@ class EventHandler:
     async def handle_event(
         self,
         pl: payload.EVENT,
-    ):
+    ) -> None:
         """Handle an event.
 
         Parameters
@@ -83,7 +83,7 @@ class EventHandler:
                 print("Ignoring Exception in handle_event:")
                 self.logger.error(traceback.format_exc())
 
-    def include(self, group: EventGroup):
+    def include(self, group: EventGroup) -> None:
         """Add the events from an :class:`~EventGroup` to this
         :class:`~EventHandler`."""
 
@@ -98,7 +98,7 @@ class EventGroup:
     Functionaly identical to :class:`~commands.CommandGroup`, except that
     each name can have multiple functions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.events: dict[str, list[IPC_EVENT]] = {}
 
     def add(self, name: str) -> Callable[[IPC_EVENT], IPC_EVENT]:

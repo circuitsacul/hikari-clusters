@@ -57,7 +57,7 @@ class CommandHandler:
         self,
         client: IpcClient,
         cmd_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         self.client = client
         self.commands: dict[str, IPC_COMMAND] = {}
         self.cmd_kwargs = cmd_kwargs or {}
@@ -65,7 +65,7 @@ class CommandHandler:
     async def handle_command(
         self,
         pl: payload.COMMAND,
-    ):
+    ) -> None:
         """Parse a command payload and call the correct function,
         then send a response.
 
@@ -100,7 +100,7 @@ class CommandHandler:
                 [pl.author], pl.data.callback, r
             )
 
-    def include(self, group: CommandGroup):
+    def include(self, group: CommandGroup) -> None:
         """Copy all commands from a :class:`~CommandGroup`
         to this :class:`~CommandHandler`."""
 
@@ -126,7 +126,7 @@ class CommandGroup:
     ```
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.commands: dict[str, IPC_COMMAND] = {}
 
     def add(self, name: str) -> Callable[[IPC_COMMAND], IPC_COMMAND]:

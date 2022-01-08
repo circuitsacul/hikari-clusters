@@ -30,7 +30,7 @@ class MyBot(Cluster):
         # load modules & events here
 
 
-if __name__ == "__main__":
+def run() -> None:
     Server(
         host="localhost",
         port=8765,

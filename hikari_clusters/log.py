@@ -41,7 +41,7 @@ DEBUG = logging.DEBUG
 
 
 class _LoggingHandler(logging.Handler):
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__()
         self.fmt = logging.Formatter(logging.BASIC_FORMAT)
         self.limit = 50
@@ -59,7 +59,7 @@ class Logger(logging.Logger):
     """A logging.Logger that forces the handlers
     to be the same at all times."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name, INFO)
         self.hdlr = _LoggingHandler(name)
 

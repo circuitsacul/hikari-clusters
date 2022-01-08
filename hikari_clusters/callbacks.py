@@ -64,7 +64,7 @@ class Callback:
         self.responders = responders
         self.resps: dict[int, payload.RESPONSE | NoResponse] = {}
 
-    async def wait(self, timeout: float = 3.0):
+    async def wait(self, timeout: float = 3.0) -> None:
         """Wait until all responses have been received.
 
         Parameters
@@ -104,7 +104,7 @@ class CallbackHandler:
         self._curr_cbk += 1
         return self._curr_cbk
 
-    def handle_response(self, pl: payload.RESPONSE):
+    def handle_response(self, pl: payload.RESPONSE) -> None:
         """Handles a response and adds it to the propert :class:`~Callback`
         if it exists.
         """
