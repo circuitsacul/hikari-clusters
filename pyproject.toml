@@ -15,7 +15,7 @@ target_version=['py38']
 name = "hikari-clusters"
 version = "0.1.0"
 description = "Tool for clustering with hikari."
-authors = ["Circuit <circuitsacul@gmail.com>"]
+authors = ["Circuit"]
 license = "MIT"
 
 [tool.poetry.dependencies]
