@@ -8,7 +8,7 @@ description = "Tool for clustering with hikari."
 authors = ["Circuit"]
 license = "MIT"
 readme = "README.md"
-respoitory = "https://github.com/TrigonDev/hikari-clusters"
+respository = "https://github.com/TrigonDev/hikari-clusters"
 documentation = "https://github.com/TrigonDev/hikari-clusters/wiki"
 keywords = ["hikari", "discord", "clustering", "bot", "ipc"]
 
