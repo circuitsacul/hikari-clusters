@@ -1,16 +1,16 @@
-name: Pytest
+name: pytest
 
 on: [push]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.os }}-latest
     strategy:
-      max-parallel: 5
       matrix:
         python-version: [ '3.8', '3.9', '3.10' ]
+        os: [ ubuntu, macos, windows ]
 
-    name: Python ${{ matrix.python-version }}
+    name: PY${{ matrix.python-version }} ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
