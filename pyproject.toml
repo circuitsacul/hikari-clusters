@@ -13,7 +13,7 @@ documentation = "https://github.com/TrigonDev/hikari-clusters/wiki"
 keywords = ["hikari", "discord", "clustering", "bot", "ipc"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8.0,<3.11"
 hikari = "^2.0.0.dev105"
 websockets = "^10.1"
 
