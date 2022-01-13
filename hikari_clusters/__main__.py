@@ -20,30 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from importlib.metadata import version
+from . import __version__
 
-from . import close_codes, commands, events, exceptions, payload
-from .brain import Brain
-from .cluster import Cluster, ClusterLauncher
-from .info_classes import ClusterInfo, ServerInfo
-from .ipc_client import IpcClient
-from .ipc_server import IpcServer
-from .server import Server
-
-__version__ = version(__name__)
-
-__all__ = (
-    "IpcClient",
-    "IpcServer",
-    "Brain",
-    "Cluster",
-    "ClusterLauncher",
-    "Server",
-    "ClusterInfo",
-    "ServerInfo",
-    "payload",
-    "events",
-    "commands",
-    "exceptions",
-    "close_codes",
-)
+print(f"{__package__} {__version__}")
