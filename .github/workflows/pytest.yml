@@ -1,0 +1,25 @@
+name: Pytest
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10' ]
+
+    name: Python ${{ matrix.python-version }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Set up Poetry
+      run: pip install poetry
+    - name: Install dependencies
+      run: poetry install
+    - name: Test with pytest
+      run: poetry run python -m pytest

@@ -1,25 +1,19 @@
-[tool.mypy]
-ignore_missing_imports = true
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-testpaths = [
-    "tests",
-]
-
 [tool.black]
 line-length=79
-target_version=['py38']
 
 [tool.poetry]
 name = "hikari-clusters"
-version = "0.1.0"
+version = "0.0.0"
 description = "Tool for clustering with hikari."
 authors = ["Circuit"]
 license = "MIT"
+readme = "README.md"
+respoitory = "https://github.com/TrigonDev/hikari-clusters"
+documentation = "https://github.com/TrigonDev/hikari-clusters/wiki"
+keywords = ["hikari", "discord", "clustering", "bot", "ipc"]
 
 [tool.poetry.dependencies]
-python = ">=3.8, <3.11"
+python = "^3.8"
 hikari = "^2.0.0.dev105"
 websockets = "^10.1"
 
