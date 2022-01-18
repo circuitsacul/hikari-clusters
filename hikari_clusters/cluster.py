@@ -214,7 +214,7 @@ class ClusterLauncher:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        bot = Cluster(
+        bot = self.bot_class(
             ipc_uri,
             ipc_token,
             shard_ids,
