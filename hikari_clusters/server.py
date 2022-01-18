@@ -71,9 +71,12 @@ class Server:
         port: int,
         token: str,
         cluster_launcher: ClusterLauncher,
-        certificate_path: pathlib.Path | None = None,
+        certificate_path: pathlib.Path | str | None = None,
     ) -> None:
         self.tasks = TaskManager(LOG)
+
+        if isinstance(certificate_path, str):
+            certificate_path = pathlib.Path(certificate_path)
 
         self.ipc = IpcClient(
             IpcClient.get_uri(host, port, certificate_path is not None),

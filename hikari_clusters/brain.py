@@ -69,13 +69,16 @@ class Brain:
         total_servers: int,
         clusters_per_server: int,
         shards_per_cluster: int,
-        certificate_path: pathlib.Path | None = None,
+        certificate_path: pathlib.Path | str | None = None,
     ) -> None:
         self.tasks = TaskManager(LOG)
 
         self.total_servers = total_servers
         self.cluster_per_server = clusters_per_server
         self.shards_per_cluster = shards_per_cluster
+
+        if isinstance(certificate_path, str):
+            certificate_path = pathlib.Path(certificate_path)
 
         self.server = IpcServer(
             host,
