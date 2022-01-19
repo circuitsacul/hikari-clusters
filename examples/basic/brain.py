@@ -28,7 +28,7 @@ def run() -> None:
         host="localhost",
         port=8765,
         token="ipc token",
-        total_servers=2,
-        clusters_per_server=4,
-        shards_per_cluster=4,
+        total_servers=1,
+        clusters_per_server=2,
+        shards_per_cluster=3,
     ).run()

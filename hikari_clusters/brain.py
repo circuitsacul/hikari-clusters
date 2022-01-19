@@ -199,7 +199,7 @@ class Brain:
             return None
 
         for s in self.ipc.servers.values():
-            if len(s.cluster_uids) < self.shards_per_cluster:
+            if len(s.cluster_uids) < self.cluster_per_server:
                 break
         else:
             return None
