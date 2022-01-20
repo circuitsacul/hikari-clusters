@@ -1,5 +1,4 @@
 # hikari-clusters
-[![pytest](https://github.com/TrigonDev/hikari-clusters/actions/workflows/pytest.yml/badge.svg)](https://github.com/TrigonDev/hikari-clusters/actions/workflows/pytest.yml)
 [![pypi](https://github.com/TrigonDev/hikari-clusters/actions/workflows/pypi.yml/badge.svg)](https://pypi.org/project/hikari-clusters)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/TrigonDev/hikari-clusters/main.svg)](https://results.pre-commit.ci/latest/github/TrigonDev/hikari-clusters/main)
 
