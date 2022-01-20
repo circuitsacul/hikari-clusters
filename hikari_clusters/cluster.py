@@ -112,7 +112,6 @@ class Cluster(GatewayBot):
     def ready(self) -> bool:
         """Whether or not this cluster is fully launched."""
 
-        return True  # TODO undo this
         return len(self.shards) == len(self.shard_ids)
 
     @property
@@ -135,7 +134,7 @@ class Cluster(GatewayBot):
         kwargs["shard_count"] = self.shard_count
         kwargs["shard_ids"] = self.shard_ids
 
-        # await super().start(**kwargs)
+        await super().start(**kwargs)
 
     async def join(self, *args, **kwargs) -> None:
         """Wait for the bot to close, and then return.
@@ -157,7 +156,7 @@ class Cluster(GatewayBot):
         self.__tasks.cancel_all()
         await self.__tasks.wait_for_all()
 
-        # await super().close()
+        await super().close()
 
     def stop(self) -> None:
         """Tells the bot and IPC to close."""
