@@ -25,9 +25,12 @@ from __future__ import annotations
 import asyncio
 import datetime
 from contextlib import contextmanager
-from typing import Generator, Iterable
+from typing import TYPE_CHECKING, Generator, Iterable
 
 from . import payload
+
+if TYPE_CHECKING:
+    from .ipc_client import IpcClient
 
 __all__ = (
     "NoResponse",
@@ -59,7 +62,8 @@ class Callback:
         The clients that should be responding to this callback.
     """
 
-    def __init__(self, key: int, responders: Iterable[int]):
+    def __init__(self, ipc: IpcClient, key: int, responders: Iterable[int]):
+        self.ipc = ipc
         self.key = key
         self.responders = responders
         self.resps: dict[int, payload.RESPONSE | NoResponse] = {}
@@ -79,6 +83,11 @@ class Callback:
             missing = [
                 uid for uid in self.responders if uid not in self.resps.keys()
             ]
+            for uid in set(missing).difference(self.ipc.client_uids):
+                # the client diconnected
+                self.resps[uid] = NoResponse()
+                missing.remove(uid)
+
             if not missing:
                 return
 
@@ -93,7 +102,8 @@ class Callback:
 class CallbackHandler:
     """Handles callbacks for a client."""
 
-    def __init__(self):
+    def __init__(self, ipc: IpcClient):
+        self.ipc = ipc
         self.callbacks: dict[int, Callback] = {}
         self._curr_cbk: int = 0
 
@@ -130,7 +140,7 @@ class CallbackHandler:
         ```
         """
 
-        cb = Callback(self.next_cbk, responders)
+        cb = Callback(self.ipc, self.next_cbk, responders)
         self.callbacks[cb.key] = cb
 
         try:

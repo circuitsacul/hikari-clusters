@@ -83,7 +83,7 @@ class IpcClient:
         cmd_kwargs["_ipc_client"] = self
         event_kwargs["_ipc_client"] = self
 
-        self.callbacks = CallbackHandler()
+        self.callbacks = CallbackHandler(self)
         self.commands = CommandHandler(self, cmd_kwargs)
         self.events = EventHandler(logger, event_kwargs)
 
