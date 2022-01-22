@@ -20,12 +20,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from hikari import GatewayBot
+
 from hikari_clusters import Cluster, ClusterLauncher, Server
 
 
-class MyBot(Cluster):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MyBot(GatewayBot):
+    cluster: Cluster
+    # purely optional typehint. ClusterLauncher will set this on init
+
+    def __init__(self):
+        super().__init__(token="discord token")
 
         # load modules & events here
 
@@ -35,7 +40,5 @@ def run() -> None:
         host="localhost",
         port=8765,
         token="ipc token",
-        cluster_launcher=ClusterLauncher(
-            MyBot, bot_init_kwargs={"token": "discord token"}
-        ),
+        cluster_launcher=ClusterLauncher(MyBot),
     ).run()
