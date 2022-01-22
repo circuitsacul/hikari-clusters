@@ -149,16 +149,15 @@ class Cluster:
             [self.stop_future, self.ipc.stop_future],
             return_when=asyncio.FIRST_COMPLETED,
         )
-        await self.bot.join()
 
     async def close(self) -> None:
+        await self.bot.close()
+
         self.ipc.stop()
         await self.ipc.close()
 
         self.__tasks.cancel_all()
         await self.__tasks.wait_for_all()
-
-        await self.bot.close()
 
     def stop(self) -> None:
         """Tells the bot and IPC to close."""
