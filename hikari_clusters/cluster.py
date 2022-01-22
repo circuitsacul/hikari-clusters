@@ -43,7 +43,7 @@ __all__ = (
 )
 
 
-class Cluster(GatewayBot):
+class Cluster:
     """A subclass of :class:`~hikari.GatewayBot` designed for
     use with hikari-clusters.
 
@@ -71,9 +71,10 @@ class Cluster(GatewayBot):
         shard_count: int,
         server_uid: int,
         certificate_path: pathlib.Path | None,
-        init_kwargs: dict[str, Any],
+        bot: GatewayBot,
     ) -> None:
-        super().__init__(**init_kwargs)
+        self.bot = bot
+        self.bot.cluster = self  # type: ignore
 
         self.shard_ids = shard_ids
         """The shard ids for this cluster."""
@@ -112,7 +113,7 @@ class Cluster(GatewayBot):
     def ready(self) -> bool:
         """Whether or not this cluster is fully launched."""
 
-        return len(self.shards) == len(self.shard_ids)
+        return len(self.bot.shards) == len(self.shard_ids)
 
     @property
     def shard_count(self) -> int:
@@ -134,9 +135,9 @@ class Cluster(GatewayBot):
         kwargs["shard_count"] = self.shard_count
         kwargs["shard_ids"] = self.shard_ids
 
-        await super().start(**kwargs)
+        await self.bot.start(**kwargs)
 
-    async def join(self, *args, **kwargs) -> None:
+    async def join(self) -> None:
         """Wait for the bot to close, and then return.
 
         Does not ask the bot to close. Use :meth:`~Cluster.stop` to tell
@@ -148,6 +149,7 @@ class Cluster(GatewayBot):
             [self.stop_future, self.ipc.stop_future],
             return_when=asyncio.FIRST_COMPLETED,
         )
+        await self.bot.join()
 
     async def close(self) -> None:
         self.ipc.stop()
@@ -156,7 +158,7 @@ class Cluster(GatewayBot):
         self.__tasks.cancel_all()
         await self.__tasks.wait_for_all()
 
-        await super().close()
+        await self.bot.close()
 
     def stop(self) -> None:
         """Tells the bot and IPC to close."""
@@ -191,13 +193,15 @@ class ClusterLauncher:
 
     def __init__(
         self,
-        bot_class: Type[Cluster] = Cluster,
+        bot_class: Type[GatewayBot],
         bot_init_kwargs: dict[str, Any] | None = None,
         bot_start_kwargs: dict[str, Any] | None = None,
+        cluster_class: Type[Cluster] = Cluster,
     ) -> None:
         self.bot_class = bot_class
         self.bot_init_kwargs = bot_init_kwargs or {}
         self.bot_start_kwargs = bot_start_kwargs or {}
+        self.cluster_class = cluster_class
 
     def launch_cluster(
         self,
@@ -213,24 +217,24 @@ class ClusterLauncher:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        bot = self.bot_class(
+        cluster = self.cluster_class(
             ipc_uri,
             ipc_token,
             shard_ids,
             shard_count,
             server_uid,
             certificate_path,
-            self.bot_init_kwargs,
+            self.bot_class(**self.bot_init_kwargs),
         )
 
         def sigstop(*args, **kwargs) -> None:
-            bot.stop()
+            cluster.stop()
 
         loop.add_signal_handler(signal.SIGINT, sigstop)
 
-        loop.run_until_complete(bot.start())
-        loop.run_until_complete(bot.join())
-        loop.run_until_complete(bot.close())
+        loop.run_until_complete(cluster.start())
+        loop.run_until_complete(cluster.join())
+        loop.run_until_complete(cluster.close())
 
 
 _C = CommandGroup()
