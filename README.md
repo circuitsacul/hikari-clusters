@@ -2,7 +2,7 @@
 [![pypi](https://github.com/TrigonDev/hikari-clusters/actions/workflows/pypi.yml/badge.svg)](https://pypi.org/project/hikari-clusters)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/TrigonDev/hikari-clusters/main.svg)](https://results.pre-commit.ci/latest/github/TrigonDev/hikari-clusters/main)
 
-[CONTRIBUTING.md](https://github.com/trigondev/.github/tree/main/CONTRIBUTING.md)
+[Documentation](https://github.com/trigondev/hikari-clusters/wiki) | [CONTRIBUTING.md](https://github.com/trigondev/.github/tree/main/CONTRIBUTING.md)
 
 Clustering for hikari made easy. Run examples with `python -m examples.<example name>` (`python -m examples.basic`)
 
