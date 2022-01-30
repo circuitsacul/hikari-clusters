@@ -24,14 +24,7 @@ from __future__ import annotations
 
 import logging
 
-__all__ = (
-    "FATAL",
-    "ERROR",
-    "WARN",
-    "INFO",
-    "DEBUG",
-    "Logger",
-)
+__all__ = ("FATAL", "ERROR", "WARN", "INFO", "DEBUG", "Logger")
 
 FATAL = logging.FATAL
 ERROR = logging.ERROR

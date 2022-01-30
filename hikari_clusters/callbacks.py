@@ -32,11 +32,7 @@ from . import payload
 if TYPE_CHECKING:
     from .ipc_client import IpcClient
 
-__all__ = (
-    "NoResponse",
-    "Callback",
-    "CallbackHandler",
-)
+__all__ = ("NoResponse", "Callback", "CallbackHandler")
 
 
 class NoResponse:

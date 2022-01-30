@@ -81,10 +81,7 @@ class Brain:
             certificate_path = pathlib.Path(certificate_path)
 
         self.server = IpcServer(
-            host,
-            port,
-            token,
-            certificate_path=certificate_path,
+            host, port, token, certificate_path=certificate_path
         )
         self.ipc = IpcClient(
             IpcClient.get_uri(host, port, certificate_path is not None),

@@ -32,11 +32,7 @@ if TYPE_CHECKING:
     from .ipc_client import IpcClient
 
 
-__all__ = (
-    "CommandHandler",
-    "CommandGroup",
-    "IPC_COMMAND",
-)
+__all__ = ("CommandHandler", "CommandGroup", "IPC_COMMAND")
 
 
 IPC_COMMAND = Callable[..., Awaitable[payload.DATA]]
@@ -54,18 +50,13 @@ class CommandHandler:
     """
 
     def __init__(
-        self,
-        client: IpcClient,
-        cmd_kwargs: dict[str, Any] | None = None,
+        self, client: IpcClient, cmd_kwargs: dict[str, Any] | None = None
     ) -> None:
         self.client = client
         self.commands: dict[str, IPC_COMMAND] = {}
         self.cmd_kwargs = cmd_kwargs or {}
 
-    async def handle_command(
-        self,
-        pl: payload.COMMAND,
-    ) -> None:
+    async def handle_command(self, pl: payload.COMMAND) -> None:
         """Parse a command payload and call the correct function,
         then send a response.
 

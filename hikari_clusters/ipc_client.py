@@ -390,12 +390,7 @@ class IpcClient:
         self, to: Iterable[int], pl_data: payload.PAYLOAD_DATA
     ) -> None:
         assert self.uid is not None
-        pl = payload.Payload(
-            pl_data.opcode,
-            self.uid,
-            list(to),
-            pl_data,
-        )
+        pl = payload.Payload(pl_data.opcode, self.uid, list(to), pl_data)
         await self._raw_send(json.dumps(pl.serialize()))
 
     async def _raw_send(self, msg: str) -> None:

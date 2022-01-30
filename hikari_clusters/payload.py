@@ -45,10 +45,7 @@ __all__ = (
     "deserialize_payload",
 )
 
-_P = TypeVar(
-    "_P",
-    bound="PAYLOAD_DATA",
-)
+_P = TypeVar("_P", bound="PAYLOAD_DATA")
 DATA = Union[Dict[str, Any], None]
 
 
@@ -134,11 +131,7 @@ class ResponseNotFound:
 
 
 PAYLOAD_DATA = Union[
-    Command,
-    Event,
-    ResponseOk,
-    ResponseTraceback,
-    ResponseNotFound,
+    Command, Event, ResponseOk, ResponseTraceback, ResponseNotFound,
 ]
 
 OPCODES: dict[int, Type[PAYLOAD_DATA]] = {

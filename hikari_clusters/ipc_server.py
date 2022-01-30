@@ -188,12 +188,7 @@ class IpcServer:
 
         uid = self._next_uid
         await ws.send(
-            json.dumps(
-                {
-                    "uid": uid,
-                    "client_uids": list(self.clients.keys()),
-                }
-            )
+            json.dumps({"uid": uid, "client_uids": list(self.clients.keys())})
         )
         LOG.debug(f"Handshake successful, uid {uid}")
         return uid

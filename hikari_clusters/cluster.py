@@ -37,10 +37,7 @@ from .info_classes import ClusterInfo
 from .ipc_client import IpcClient
 from .task_manager import TaskManager
 
-__all__ = (
-    "Cluster",
-    "ClusterLauncher",
-)
+__all__ = ("Cluster", "ClusterLauncher")
 
 
 class Cluster:

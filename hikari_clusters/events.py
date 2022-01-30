@@ -27,11 +27,7 @@ from typing import Any, Awaitable, Callable
 
 from . import log, payload
 
-__all__ = (
-    "EventHandler",
-    "EventGroup",
-    "IPC_EVENT",
-)
+__all__ = ("EventHandler", "EventGroup", "IPC_EVENT")
 
 IPC_EVENT = Callable[..., Awaitable[None]]
 
@@ -54,10 +50,7 @@ class EventHandler:
         self.event_kwargs = event_kwargs or {}
         self.logger = logger
 
-    async def handle_event(
-        self,
-        pl: payload.EVENT,
-    ) -> None:
+    async def handle_event(self, pl: payload.EVENT) -> None:
         """Handle an event.
 
         Parameters
