@@ -5,7 +5,7 @@ skip-magic-trailing-comma=true
 [tool.poetry]
 name = "hikari-clusters"
 version = "0.0.0"
-description = "Tool for clustering with hikari."
+description = "An advanced yet easy-to-use clustering tool for Hikari."
 authors = ["Circuit"]
 license = "MIT"
 readme = "README.md"
