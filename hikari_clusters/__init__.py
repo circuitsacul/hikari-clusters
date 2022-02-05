@@ -20,6 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""
+An advanced yet easy-to-use clustering tool for Hikari.
+
+https://github.com/trigondev/hikari-clusters
+"""
+
 from importlib.metadata import version
 
 from . import close_codes, commands, events, exceptions, payload
