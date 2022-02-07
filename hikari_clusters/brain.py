@@ -27,10 +27,10 @@ import pathlib
 import signal
 
 from . import log, payload
+from .events import EventGroup
 from .ipc_client import IpcClient
 from .ipc_server import IpcServer
 from .task_manager import TaskManager
-from .events import EventGroup
 
 __all__ = ("Brain",)
 
@@ -251,8 +251,5 @@ async def brain_stop(pl: payload.EVENT, brain: Brain) -> None:
 
 @_E.add("shutdown")
 async def shutdown(pl: payload.EVENT, brain: Brain) -> None:
-    await brain.ipc.send_event(
-        brain.ipc.server_uids,
-        "server_stop",
-    )
+    await brain.ipc.send_event(brain.ipc.server_uids, "server_stop")
     brain.stop()
