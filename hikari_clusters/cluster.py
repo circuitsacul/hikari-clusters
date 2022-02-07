@@ -32,7 +32,7 @@ from hikari import GatewayBot
 from websockets.exceptions import ConnectionClosed
 
 from . import log, payload
-from .commands import CommandGroup
+from .events import EventGroup
 from .info_classes import ClusterInfo
 from .ipc_client import IpcClient
 from .task_manager import TaskManager
@@ -87,9 +87,10 @@ class Cluster:
             self.logger,
             reconnect=False,
             cmd_kwargs={"cluster": self},
+            event_kwargs={"cluster": self},
             certificate_path=certificate_path,
         )
-        self.ipc.commands.include(_C)
+        self.ipc.events.include(_E)
         self.__tasks = TaskManager(self.logger)
 
         self.stop_future: asyncio.Future | None = None
@@ -233,9 +234,9 @@ class ClusterLauncher:
         loop.run_until_complete(cluster.close())
 
 
-_C = CommandGroup()
+_E = EventGroup()
 
 
-@_C.add("cluster_stop")
-async def handle_stop(pl: payload.COMMAND, cluster: Cluster) -> None:
+@_E.add("cluster_stop")
+async def handle_stop(pl: payload.EVENT, cluster: Cluster) -> None:
     cluster.stop()

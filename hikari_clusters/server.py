@@ -83,6 +83,7 @@ class Server:
             token,
             LOG,
             cmd_kwargs={"server": self},
+            event_kwargs={"server": self},
             certificate_path=certificate_path,
         )
         self.certificate_path = certificate_path
@@ -197,7 +198,6 @@ async def start_cluster(pl: payload.COMMAND, server: Server) -> None:
 _E = EventGroup()
 
 
-@_E.add("cluster_stdout")
-async def handle_cluster_stdout(pl: payload.EVENT) -> None:
-    assert pl.data.data is not None
-    print("".join(pl.data.data["data"]))
+@_E.add("server_stop")
+async def server_stop(pl: payload.EVENT, server: Server) -> None:
+    server.stop()
