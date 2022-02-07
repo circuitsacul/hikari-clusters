@@ -92,6 +92,7 @@ class Brain:
             cmd_kwargs={"brain": self},
             event_kwargs={"brain": self},
         )
+        self.ipc.events.include(_E)
 
         self.stop_future: asyncio.Future | None = None
 
