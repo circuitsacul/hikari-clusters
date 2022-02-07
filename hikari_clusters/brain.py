@@ -172,8 +172,6 @@ class Brain:
     async def close(self) -> None:
         """Shuts the brain down."""
 
-        await shutdown(None, self)
-
         self.server.stop()
         await self.server.close()
 
