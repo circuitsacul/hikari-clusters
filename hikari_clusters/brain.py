@@ -26,7 +26,8 @@ import asyncio
 import pathlib
 import signal
 
-from . import log
+from . import log, payload
+from .events import EventGroup
 from .ipc_client import IpcClient
 from .ipc_server import IpcServer
 from .task_manager import TaskManager
@@ -88,6 +89,8 @@ class Brain:
             token,
             LOG,
             certificate_path=certificate_path,
+            cmd_kwargs={"brain": self},
+            event_kwargs={"brain": self},
         )
 
         self.stop_future: asyncio.Future | None = None
@@ -168,6 +171,8 @@ class Brain:
     async def close(self) -> None:
         """Shuts the brain down."""
 
+        await shutdown(None, self)
+
         self.server.stop()
         await self.server.close()
 
@@ -234,3 +239,17 @@ class Brain:
             )
 
             self.waiting_for = (server_uid, min(shards))
+
+
+_E = EventGroup()
+
+
+@_E.add("brain_stop")
+async def brain_stop(pl: payload.EVENT, brain: Brain) -> None:
+    brain.stop()
+
+
+@_E.add("shutdown")
+async def shutdown(pl: payload.EVENT, brain: Brain) -> None:
+    await brain.ipc.send_event(brain.ipc.server_uids, "server_stop")
+    brain.stop()
