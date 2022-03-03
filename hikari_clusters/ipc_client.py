@@ -283,7 +283,11 @@ class IpcClient:
         await self._send(to, payload.Event(name, data))
 
     async def send_command(
-        self, to: Iterable[int], name: str, data: payload.DATA = None
+        self,
+        to: Iterable[int],
+        name: str,
+        data: payload.DATA = None,
+        timeout: float = 3.0,
     ) -> dict[int, payload.RESPONSE | NoResponse]:
         """Tell other clients to do something, then wait for their response.
 
@@ -295,6 +299,8 @@ class IpcClient:
             The name of the command.
         data : payload.DATA, optional
             The data to send with the command, by default None
+        timeout : int, optional
+            How long to wait for responses, by default 3 seconds.
 
         Returns
         -------
@@ -305,7 +311,7 @@ class IpcClient:
 
         with self.callbacks.callback(to) as cb:
             await self._send(to, payload.Command(name, cb.key, data))
-            await cb.wait()
+            await cb.wait(timeout)
         return cb.resps
 
     async def _start(self) -> None:
