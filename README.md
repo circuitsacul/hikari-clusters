@@ -6,7 +6,7 @@
 
 Clustering for hikari made easy. Run examples with `python -m examples.<example name>` (`python -m examples.basic`)
 
-If you need support, you can contact me `Circuit#3397` after joining [this server](https://discord.gg/dGAzZDaTS9). I don't accept friend requests.
+If you need support, you can contact me `CircuitSacul#3397` after joining [this server](https://discord.gg/dGAzZDaTS9). I don't accept friend requests.
 
 <p align="center">
   <img src="https://us-east-1.tixte.net/uploads/circuit.is-from.space/clustered-bot-structure.jpeg">
