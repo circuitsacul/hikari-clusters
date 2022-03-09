@@ -20,6 +20,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-def test_test() -> None:
-    assert True
+def test_import() -> None:
+    import hikari_clusters  # type: ignore  # noqa
