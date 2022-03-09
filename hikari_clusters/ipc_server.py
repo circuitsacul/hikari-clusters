@@ -29,8 +29,8 @@ import ssl
 import traceback
 from typing import Any, Iterable
 
-from websockets import server
 from websockets.exceptions import ConnectionClosedOK
+from websockets.legacy import server
 
 from . import close_codes, log, payload
 from .task_manager import TaskManager
@@ -81,13 +81,13 @@ class IpcServer:
         else:
             self.ssl_context = None
 
-        self.stop_future: asyncio.Future | None = None
-        self.ready_future: asyncio.Future | None = None
+        self.stop_future: asyncio.Future[None] | None = None
+        self.ready_future: asyncio.Future[None] | None = None
 
         self.clients: dict[int, server.WebSocketServerProtocol] = {}
         self._current_uid: int = 0
 
-        self.main_task: asyncio.Task | None = None
+        self.main_task: asyncio.Task[None] | None = None
 
     @property
     def _next_uid(self) -> int:

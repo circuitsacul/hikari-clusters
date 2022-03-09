@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import traceback
-from typing import Awaitable, Iterable, Type, TypeVar
+from typing import Any, Awaitable, Iterable, Type, TypeVar
 
 from . import log
 
@@ -35,7 +35,7 @@ _T = TypeVar("_T")
 
 class _TaskWrapper:
     def __init__(
-        self, allow_cancel: bool, allow_wait: bool, t: asyncio.Task
+        self, allow_cancel: bool, allow_wait: bool, t: asyncio.Task[Any]
     ) -> None:
         self.allow_cancel = allow_cancel
         self.allow_wait = allow_wait
@@ -92,7 +92,7 @@ class TaskManager:
 
         tid = self.next_tid
 
-        def callback(task: asyncio.Task):
+        def callback(task: asyncio.Task[Any]) -> None:
             try:
                 task.result()
             except asyncio.CancelledError:
@@ -127,7 +127,7 @@ class TaskManager:
             How long to wait for a task before giving up.
         """
 
-        to_wait: list[asyncio.Task] = []
+        to_wait: list[asyncio.Task[Any]] = []
         for t in self._tasks.values():
             if t.allow_wait:
                 to_wait.append(t.t)

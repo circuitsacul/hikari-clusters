@@ -21,5 +21,5 @@
 # SOFTWARE.
 
 
-def test_test():
+def test_test() -> None:
     assert True

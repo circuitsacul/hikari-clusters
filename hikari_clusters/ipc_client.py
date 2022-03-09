@@ -28,8 +28,8 @@ import pathlib
 import ssl
 from typing import Any, Iterable
 
-from websockets import client
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK
+from websockets.legacy import client
 
 from . import close_codes, exceptions, log, payload
 from .callbacks import CallbackHandler, NoResponse
@@ -114,8 +114,8 @@ class IpcClient:
         self._ws: client.WebSocketClientProtocol | None = None
         self.uid: int | None = None
 
-        self.stop_future: asyncio.Future | None = None
-        self.ready_future: asyncio.Future | None = None
+        self.stop_future: asyncio.Future[None] | None = None
+        self.ready_future: asyncio.Future[None] | None = None
 
     @property
     def server_uids(self) -> set[int]:
@@ -181,7 +181,7 @@ class IpcClient:
         self.stop_future = asyncio.Future()
         self.ready_future = asyncio.Future()
 
-        def _stop(*args, **kwargs) -> None:
+        def _stop(*args: Any, **kwargs: Any) -> None:
             self.stop()
 
         self.tasks.create_task(self._start()).add_done_callback(_stop)
