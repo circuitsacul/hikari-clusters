@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 __all__ = ("FATAL", "ERROR", "WARN", "INFO", "DEBUG", "Logger")
 
@@ -57,11 +58,11 @@ class Logger(logging.Logger):
         self.hdlr = _LoggingHandler(name)
 
     @property  # type: ignore
-    def handlers(self):
+    def handlers(self) -> list[_LoggingHandler]:  # type: ignore
         return [self.hdlr]
 
     @handlers.setter
-    def handlers(self, other):
+    def handlers(self, other: Any) -> None:
         # take that stupid things that try to erase my logs
         return
 

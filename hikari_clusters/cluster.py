@@ -93,7 +93,7 @@ class Cluster:
         self.ipc.events.include(_E)
         self.__tasks = TaskManager(self.logger)
 
-        self.stop_future: asyncio.Future | None = None
+        self.stop_future: asyncio.Future[None] | None = None
 
     @property
     def cluster_id(self) -> int:
@@ -119,7 +119,7 @@ class Cluster:
 
         return self._shard_count
 
-    async def start(self, **kwargs) -> None:
+    async def start(self, **kwargs: Any) -> None:
         """Start the IPC and then the bot.
 
         Returns once all shards are ready."""
@@ -224,7 +224,7 @@ class ClusterLauncher:
             self.bot_class(**self.bot_init_kwargs),
         )
 
-        def sigstop(*args, **kwargs) -> None:
+        def sigstop(*args: Any, **kwargs: Any) -> None:
             cluster.stop()
 
         loop.add_signal_handler(signal.SIGINT, sigstop)

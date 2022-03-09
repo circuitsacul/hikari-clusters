@@ -29,7 +29,7 @@ class MyBot(GatewayBot):
     cluster: Cluster
     # purely optional typehint. ClusterLauncher will set this on init
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(token="discord token")
 
         # load modules & events here

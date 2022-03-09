@@ -27,7 +27,7 @@ import multiprocessing
 import pathlib
 import signal
 from dataclasses import asdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from websockets.exceptions import ConnectionClosed
 
@@ -95,7 +95,7 @@ class Server:
 
         self.cluster_launcher = cluster_launcher
 
-        self.stop_future: asyncio.Future | None = None
+        self.stop_future: asyncio.Future[None] | None = None
 
     @property
     def clusters(self) -> list[ClusterInfo]:
@@ -111,7 +111,7 @@ class Server:
     def run(self) -> None:
         """Run the server, wait for the server to stop, and then shutdown."""
 
-        def sigstop(*args, **kwargs) -> None:
+        def sigstop(*args: Any, **kwargs: Any) -> None:
             self.stop()
 
         loop = asyncio.get_event_loop()

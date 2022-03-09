@@ -25,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import pathlib
 import signal
+from typing import Any
 
 from . import log, payload
 from .events import EventGroup
@@ -94,7 +95,7 @@ class Brain:
         )
         self.ipc.events.include(_E)
 
-        self.stop_future: asyncio.Future | None = None
+        self.stop_future: asyncio.Future[None] | None = None
 
         self._waiting_for: tuple[int, int] | None = None
 
@@ -143,7 +144,7 @@ class Brain:
     def run(self) -> None:
         """Run the brain, wait for the brain to stop, then cleanup."""
 
-        def sigstop(*args, **kwargs):
+        def sigstop(*args: Any, **kwargs: Any) -> None:
             self.stop()
 
         loop = asyncio.get_event_loop()
