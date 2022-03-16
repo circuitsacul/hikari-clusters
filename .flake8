@@ -1,3 +1,3 @@
 [flake8]
 extend_ignore = E203
-ignore=.nox
+exclude=.nox
