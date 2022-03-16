@@ -43,7 +43,7 @@ def pytest_and_mypy(session: nox.Session) -> None:
 @nox.session
 def flake8(session: nox.Session) -> None:
     session.install("flake8")
-    session.run("flake8", "hikari_clusters")
+    session.run("flake8")
 
 
 @nox.session
