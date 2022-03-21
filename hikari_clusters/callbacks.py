@@ -36,12 +36,8 @@ __all__ = ("NoResponse", "Callback", "CallbackHandler")
 
 
 class NoResponse:
-    """Indicates that the client failed to respond,
-    either due to a bug or because the client
-    no longer exists.
-    """
-
-    pass
+    """Indicates that the client failed to respond, either because the client
+    took too long to respond or because the client disconnected."""
 
 
 class Callback:
