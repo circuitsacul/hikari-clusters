@@ -114,6 +114,13 @@ class CallbackHandler:
         self._curr_cbk += 1
         return self._curr_cbk
 
+    def handle_disconnects(self) -> None:
+        """Tells callbacks to double-check if they've finished after a client
+        has disconnected."""
+
+        for cb in self.callbacks.values():
+            cb._finish_if_finished()
+
     def handle_response(self, pl: payload.RESPONSE) -> None:
         """Handles a response and adds it to the propert :class:`~Callback`
         if it exists.

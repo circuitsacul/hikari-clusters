@@ -356,6 +356,10 @@ class IpcClient:
         self.logger.debug(f"Handshake successful, uid {self.uid}")
 
     def _update_clients(self, client_uids: set[int]) -> None:
+        disconnected = self.client_uids.difference(client_uids)
+        if disconnected:
+            self.callbacks.handle_disconnects()
+
         self.client_uids = client_uids
         for sid in list(self.servers.keys()):
             if sid not in self.client_uids:
