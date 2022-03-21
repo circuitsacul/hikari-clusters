@@ -23,7 +23,6 @@
 from __future__ import annotations
 
 import asyncio
-import datetime
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator, Iterable
 
@@ -59,6 +58,7 @@ class Callback:
         self.key = key
         self.responders = responders
         self.resps: dict[int, payload.RESPONSE | NoResponse] = {}
+        self.future: asyncio.Future[None] = asyncio.Future()
 
     async def wait(self, timeout: float = 3.0) -> None:
         """Wait until all responses have been received.
@@ -69,25 +69,34 @@ class Callback:
             The timeout for when to set a clients response to
             :class:`~NoResponse`, default to 3.0
         """
-        start = datetime.datetime.utcnow()
 
-        while True:
-            responders = self.resps.keys()
-            missing = [uid for uid in self.responders if uid not in responders]
-            for uid in set(missing).difference(self.ipc.client_uids):
-                # the client diconnected
-                self.resps[uid] = NoResponse()
-                missing.remove(uid)
+        await asyncio.wait_for(self.future, timeout)
+        for uid in self._get_missing():
+            self.resps[uid] = NoResponse()
 
-            if not missing:
-                return
+    def _get_missing(self) -> set[int]:
+        responded = self.resps.keys()
+        return {uid for uid in self.responders if uid not in responded}
 
-            if (datetime.datetime.utcnow() - start).seconds > timeout:
-                for uid in missing:
-                    self.resps[uid] = NoResponse()
-                return
+    def _handle_response(self, pl: payload.RESPONSE) -> None:
+        self.resps[pl.author] = pl
+        self._finish_if_finished()
 
-            await asyncio.sleep(0.1)
+    def _finish_if_finished(self) -> None:
+        still_missing = self._check_disconnects()
+        if not still_missing:
+            self.future.set_result(None)
+
+    def _check_disconnects(self) -> set[int]:
+        """Check for disconnects, returning any still-missing responses."""
+
+        missing = self._get_missing()
+        for uid in missing.difference(self.ipc.client_uids):
+            # the client disconnected
+            self.resps[uid] = NoResponse()
+            missing.remove(uid)
+
+        return missing
 
 
 class CallbackHandler:
@@ -105,15 +114,23 @@ class CallbackHandler:
         self._curr_cbk += 1
         return self._curr_cbk
 
+    def handle_disconnects(self) -> None:
+        """Tells callbacks to double-check if they've finished after a client
+        has disconnected."""
+
+        for cb in self.callbacks.values():
+            cb._finish_if_finished()
+
     def handle_response(self, pl: payload.RESPONSE) -> None:
         """Handles a response and adds it to the propert :class:`~Callback`
         if it exists.
         """
 
-        if pl.data.callback not in self.callbacks:
+        cb = self.callbacks.get(pl.data.callback)
+        if not cb:
             return
 
-        self.callbacks[pl.data.callback].resps[pl.author] = pl
+        cb._handle_response(pl)
 
     @contextmanager
     def callback(
