@@ -76,8 +76,9 @@ class Callback:
         start = datetime.datetime.utcnow()
 
         while True:
+            responders = self.resps.keys()
             missing = [
-                uid for uid in self.responders if uid not in self.resps.keys()
+                uid for uid in self.responders if uid not in responders
             ]
             for uid in set(missing).difference(self.ipc.client_uids):
                 # the client diconnected
