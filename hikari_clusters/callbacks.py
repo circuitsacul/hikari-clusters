@@ -53,6 +53,8 @@ class Callback:
         The clients that should be responding to this callback.
     """
 
+    __slots__ = ("ipc", "key", "responders", "resps", "future")
+
     def __init__(self, ipc: IpcClient, key: int, responders: Iterable[int]):
         self.ipc = ipc
         self.key = key

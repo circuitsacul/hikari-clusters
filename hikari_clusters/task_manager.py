@@ -34,6 +34,8 @@ _T = TypeVar("_T")
 
 
 class _TaskWrapper:
+    __slots__ = ("allow_cancel", "allow_wait", "t")
+
     def __init__(
         self, allow_cancel: bool, allow_wait: bool, t: asyncio.Task[Any]
     ) -> None:
