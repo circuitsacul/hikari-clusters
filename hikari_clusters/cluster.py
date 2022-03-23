@@ -71,7 +71,6 @@ class Cluster:
         bot: GatewayBot,
     ) -> None:
         self.bot = bot
-        self.bot.cluster = self  # type: ignore
 
         self.shard_ids = shard_ids
         """The shard ids for this cluster."""
@@ -94,6 +93,8 @@ class Cluster:
         self.__tasks = TaskManager(self.logger)
 
         self.stop_future: asyncio.Future[None] | None = None
+
+        self.bot.cluster = self  # type: ignore
 
     @property
     def cluster_id(self) -> int:
