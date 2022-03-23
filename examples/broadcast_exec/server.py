@@ -23,6 +23,8 @@
 # When you send `!exec <code>`, the code will be sent to all clusters. Try
 # running `print(1)` with multiple servers.
 
+from typing import Any
+
 from hikari import GatewayBot, GuildMessageCreateEvent
 
 from hikari_clusters import Cluster, ClusterLauncher, Server, payload
@@ -30,7 +32,7 @@ from hikari_clusters.commands import CommandGroup
 
 
 class MyBot(GatewayBot):
-    _cluster: Cluster
+    cluster: Cluster
 
     def __init__(self) -> None:
         super().__init__(token="discord token")
@@ -47,15 +49,11 @@ class MyBot(GatewayBot):
                 {"code": event.content[6:]},
             )
 
-    @property
-    def cluster(self) -> Cluster:
-        return self._cluster
-
-    @cluster.setter
-    def cluster(self, value: Cluster) -> None:
-        # when the cluster is set, we can include our commands.
-        self._cluster = value
-        self._cluster.ipc.commands.include(COMMANDS)
+    async def start(self, *args: Any, **kwargs: Any) -> None:
+        # we include commands inside start() because self.cluster is not
+        # defined inside __init__()
+        self.cluster.ipc.commands.include(COMMANDS)
+        await super().start(*args, **kwargs)
 
 
 COMMANDS = CommandGroup()
