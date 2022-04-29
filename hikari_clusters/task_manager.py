@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import traceback
-from typing import Any, Awaitable, Iterable, Type, TypeVar
+from typing import Any, Coroutine, Generator, Iterable, Type, TypeVar
 
 from . import log
 
@@ -61,7 +61,7 @@ class TaskManager:
 
     def create_task(
         self,
-        coro: Awaitable[_T],
+        coro: Generator[Any, None, _T] | Coroutine[Any, None, _T],
         *,
         name: str | None = None,
         ignored_exceptions: Iterable[Type[Exception]] = tuple(),
