@@ -64,11 +64,12 @@ class EventHandler:
             return
 
         for func in events:
-            kwargs = {}
             func_co_names = func.__code__.co_varnames
-            for name, val in self.event_kwargs.items():
-                if name in func_co_names:
-                    kwargs[name] = val
+            kwargs = {
+                name: val
+                for name, val in self.event_kwargs.items()
+                if name in func_co_names
+            }
 
             try:
                 await func(pl, **kwargs)

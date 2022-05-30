@@ -129,12 +129,9 @@ class TaskManager:
             How long to wait for a task before giving up.
         """
 
-        to_wait: list[asyncio.Task[Any]] = []
-        for t in self._tasks.values():
-            if t.allow_wait:
-                to_wait.append(t.t)
+        to_wait = [t.t for t in self._tasks.values() if t.allow_wait]
 
-        if len(to_wait) == 0:
+        if not to_wait:
             return
 
         await asyncio.wait(to_wait, timeout=timeout)

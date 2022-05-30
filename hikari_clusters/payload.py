@@ -65,6 +65,7 @@ class Payload(Generic[_P]):
 
     def serialize(self) -> dict[str, Any]:
         """Converts the payload to a dictionary."""
+
         return asdict(self)
 
 

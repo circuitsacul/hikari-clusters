@@ -196,10 +196,9 @@ class IpcServer:
     async def _send_client_uids_loop(self) -> None:
         await self.wait_until_ready()
         while True:
-            data = json.dumps(
-                {"internal": True, "client_uids": list(self.clients.keys())}
-            )
-            await self._dispatch(list(self.clients.keys()), data)
+            client_ids = list(self.clients.keys())
+            data = json.dumps({"internal": True, "client_uids": client_ids})
+            await self._dispatch(client_ids, data)
             await asyncio.sleep(5)
 
     async def _dispatch(self, to: Iterable[int], msg: str | bytes) -> None:

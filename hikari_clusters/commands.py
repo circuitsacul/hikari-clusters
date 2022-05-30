@@ -73,11 +73,12 @@ class CommandHandler:
             )
             return
 
-        kwargs = {}
         function_co_names = command.__code__.co_varnames
-        for name, val in self.cmd_kwargs.items():
-            if name in function_co_names:
-                kwargs[name] = val
+        kwargs = {
+            name: val
+            for name, val in self.cmd_kwargs.items()
+            if name in function_co_names
+        }
 
         try:
             r = await command(pl, **kwargs)
