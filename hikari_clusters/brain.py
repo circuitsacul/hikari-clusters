@@ -124,17 +124,24 @@ class Brain:
             starting the cluster and the smallest shard id
             of the cluster that should be starting.
         """
+
         if self._waiting_for is not None:
             server_uid, smallest_shard = self._waiting_for
-            if server_uid not in self.ipc.server_uids:
+            if (
+                server_uid not in self.ipc.server_uids
+                or smallest_shard in self.ipc.all_shards()
+            ):
+                # `server_uid not in self.ipc.server_uids`
                 # This means that the server that was supposed to start
                 # the cluster disconnected. This also means the
                 # cluster will never start, so we set _waiting_for
                 # to None.
+
+                # `smallest_shard in self.ipc.all_shards()`
+                # This means that the cluster has already started.
+
                 self._waiting_for = None
-            elif smallest_shard in self.ipc.all_shards():
-                # This means that the cluster has been started.
-                self._waiting_for = None
+
         return self._waiting_for
 
     @waiting_for.setter
@@ -192,7 +199,7 @@ class Brain:
         if len(self.ipc.server_uids) == 0:
             return None
 
-        if not all([c.ready for c in self.ipc.clusters.values()]):
+        if not all(c.ready for c in self.ipc.clusters.values()):
             return None
 
         all_shard_ids = self.ipc.all_shards()
@@ -206,12 +213,12 @@ class Brain:
         else:
             return None
 
-        shards_to_launch = set(range(0, self.total_shards))
+        shards_to_launch = set(range(self.total_shards))
         shards_to_launch.difference_update(all_shard_ids)
-        if len(shards_to_launch) == 0:
+        if not shards_to_launch:
             return None
 
-        return s.uid, list(shards_to_launch)[0 : self.shards_per_cluster]
+        return s.uid, list(shards_to_launch)[: self.shards_per_cluster]
 
     async def _send_brain_uid_loop(self) -> None:
         while True:

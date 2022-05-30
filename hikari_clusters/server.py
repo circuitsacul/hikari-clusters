@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import multiprocessing
 import pathlib
 import signal
@@ -158,7 +159,7 @@ class Server:
         while True:
             await self.ipc.wait_until_ready()
             assert self.ipc.uid
-            try:
+            with contextlib.suppress(ConnectionClosed):
                 await self.ipc.send_event(
                     self.ipc.client_uids,
                     "set_server_info",
@@ -168,8 +169,6 @@ class Server:
                         )
                     ),
                 )
-            except ConnectionClosed:
-                pass
             await asyncio.sleep(1)
 
 

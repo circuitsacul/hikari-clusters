@@ -329,7 +329,7 @@ class IpcClient:
                 pass
             except ConnectionClosed as e:
                 if e.code == close_codes.INVALID_TOKEN:
-                    raise exceptions.InvalidIpcToken
+                    raise exceptions.InvalidIpcToken from e
             except asyncio.CancelledError:
                 reconnect = False
             finally:
@@ -356,8 +356,7 @@ class IpcClient:
         self.logger.debug(f"Handshake successful, uid {self.uid}")
 
     def _update_clients(self, client_uids: set[int]) -> None:
-        disconnected = self.client_uids.difference(client_uids)
-        if disconnected:
+        if self.client_uids.difference(client_uids):
             self.callbacks.handle_disconnects()
 
         self.client_uids = client_uids
