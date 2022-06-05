@@ -64,7 +64,7 @@ class Logger(logging.Logger):
     @handlers.setter
     def handlers(self, other: Any) -> None:
         # take that stupid things that try to erase my logs
-        return
+        pass
 
 
 # ignore info messages from websockets

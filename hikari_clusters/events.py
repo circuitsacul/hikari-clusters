@@ -82,7 +82,7 @@ class EventHandler:
         :class:`~EventHandler`."""
 
         for name, funcs in group.events.items():
-            self.events.setdefault(name, list())
+            self.events.setdefault(name, [])
             self.events[name].extend(funcs)
 
 
