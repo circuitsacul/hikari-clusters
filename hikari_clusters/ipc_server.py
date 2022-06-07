@@ -110,6 +110,7 @@ class IpcServer(IpcBase):
     async def _serve(
         self, ws: server.WebSocketServerProtocol, path: str
     ) -> None:
+        uid: int | None = None
         LOG.debug("Client connected.")
         try:
             uid = await self._handshake(ws)
