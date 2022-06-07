@@ -146,10 +146,10 @@ class IpcServer:
 
             try:
                 while True:
-                        msg = await ws.recv()
-                        LOG.debug(f"Received message: {msg!s}")
-                        pl = payload.deserialize_payload(json.loads(msg))
-                        await self._dispatch(pl.recipients, msg)
+                    msg = await ws.recv()
+                    LOG.debug(f"Received message: {msg!s}")
+                    pl = payload.deserialize_payload(json.loads(msg))
+                    await self._dispatch(pl.recipients, msg)
             except ConnectionClosedOK:
                 pass
             finally:

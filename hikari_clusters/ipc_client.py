@@ -372,7 +372,7 @@ class IpcClient:
 
     async def _recv_loop(self, ws: client.WebSocketClientProtocol) -> None:
         async for msg in ws:
-            self.logger.debug(f"Received message: {msg}")
+            self.logger.debug(f"Received message: {msg!s}")
             data: dict[str, Any] = json.loads(msg)
             if data.get("internal", False):
                 self._update_clients(set(data["client_uids"]))
