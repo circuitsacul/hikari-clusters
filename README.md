@@ -9,7 +9,7 @@ Clustering for hikari made easy. Run examples with `python -m examples.<example 
 If you need support, you can contact me `CircuitSacul#3397` after joining [this server](https://discord.gg/dGAzZDaTS9). I don't accept friend requests.
 
 <p align="center">
-  <img src="https://us-east-1.tixte.net/uploads/circuit.is-from.space/clustered-bot-structure.jpeg">
+  <img src="https://us-east-1.tixte.net/uploads/files.circuitsacul.dev/hikari-clusters-diagram.jpg">
 </p>
 
 ## Creating Self-Signed Certificate:
