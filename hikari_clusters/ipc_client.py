@@ -36,12 +36,13 @@ from .callbacks import CallbackHandler, NoResponse
 from .commands import CommandHandler
 from .events import EventGroup, EventHandler
 from .info_classes import ClusterInfo, ServerInfo
+from .ipc_base import IpcBase
 from .task_manager import TaskManager
 
 __all__ = ("IpcClient",)
 
 
-class IpcClient:
+class IpcClient(IpcBase):
     """A connection to a :class:`~ipc_server.IpcServer`.
 
     Parameters
@@ -185,32 +186,6 @@ class IpcClient:
             self.stop()
 
         self.tasks.create_task(self._start()).add_done_callback(_stop)
-
-    def stop(self) -> None:
-        """Tell the client to stop."""
-
-        if self.stop_future and not self.stop_future.done():
-            self.stop_future.set_result(None)
-        if self.ready_future and not self.ready_future.done():
-            self.ready_future.cancel()
-
-    async def close(self) -> None:
-        """Disconnect and close the client."""
-
-        self.tasks.cancel_all()
-        await self.tasks.wait_for_all()
-
-    async def wait_until_ready(self) -> None:
-        """Wait until the client is either ready or shutting down."""
-
-        assert self.ready_future is not None
-        await self.ready_future
-
-    async def join(self) -> None:
-        """Wait until the client is shutting down."""
-
-        assert self.stop_future is not None
-        await self.stop_future
 
     async def send_not_found_response(
         self, to: Iterable[int], callback: int
