@@ -109,9 +109,9 @@ class IpcServer:
     def stop(self) -> None:
         """Tells the server to stop."""
 
-        if self.stop_future is not None and not self.stop_future.done():
+        if self.stop_future and not self.stop_future.done():
             self.stop_future.set_result(None)
-        if self.ready_future is not None and not self.ready_future.done():
+        if self.ready_future and not self.ready_future.done():
             self.ready_future.cancel()
 
     async def close(self) -> None:
@@ -146,13 +146,12 @@ class IpcServer:
 
             try:
                 while True:
-                    try:
-                        msg = await ws.recv()
-                        LOG.debug(f"Received message: {msg!s}")
-                        pl = payload.deserialize_payload(json.loads(msg))
-                        await self._dispatch(pl.recipients, msg)
-                    except ConnectionClosedOK:
-                        break
+                    msg = await ws.recv()
+                    LOG.debug(f"Received message: {msg!s}")
+                    pl = payload.deserialize_payload(json.loads(msg))
+                    await self._dispatch(pl.recipients, msg)
+            except ConnectionClosedOK:
+                pass
             finally:
                 del self.clients[uid]
 
@@ -160,8 +159,7 @@ class IpcServer:
             LOG.error(f"Exception in handler for client {uid}:")
             LOG.error(traceback.format_exc())
 
-        finally:
-            LOG.info(f"Client {uid} disconnected.")
+        LOG.info(f"Client {uid} disconnected.")
 
     async def _start(self) -> None:
         LOG.debug("Server starting up...")
@@ -174,7 +172,7 @@ class IpcServer:
             self.ready_future.set_result(None)
             await self.stop_future
             LOG.debug("Stopping...")
-        LOG.debug("Server exitted.")
+        LOG.debug("Server exited.")
 
     async def _handshake(
         self, ws: server.WebSocketServerProtocol
@@ -204,7 +202,7 @@ class IpcServer:
     async def _dispatch(self, to: Iterable[int], msg: str | bytes) -> None:
         for cid in to:
             client = self.clients.get(cid)
-            if not client or not client.open:
+            if not (client and client.open):
                 continue
             try:
                 await client.send(msg)

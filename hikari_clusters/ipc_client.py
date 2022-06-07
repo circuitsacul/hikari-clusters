@@ -137,11 +137,11 @@ class IpcClient:
 
         all_shards: set[int] = set()
         for c in self.clusters.values():
-            if not c.ready:
-                continue
-            if c.server_uid not in self.servers:
-                continue
-            if c.uid not in self.servers[c.server_uid].cluster_uids:
+            if not (
+                c.ready
+                and c.server_uid in self.servers
+                and c.uid in self.servers[c.server_uid].cluster_uids
+            ):
                 continue
             all_shards.update(c.shard_ids)
         return all_shards
@@ -189,9 +189,9 @@ class IpcClient:
     def stop(self) -> None:
         """Tell the client to stop."""
 
-        if self.stop_future is not None and not self.stop_future.done():
+        if self.stop_future and not self.stop_future.done():
             self.stop_future.set_result(None)
-        if self.ready_future is not None and not self.ready_future.done():
+        if self.ready_future and not self.ready_future.done():
             self.ready_future.cancel()
 
     async def close(self) -> None:
@@ -364,18 +364,11 @@ class IpcClient:
             if sid not in self.client_uids:
                 del self.servers[sid]
 
-        to_remove: list[int] = []  # a list of cluster ids to remove
-
         for cid, c in list(self.clusters.items()):
-            if cid not in self.client_uids:
-                to_remove.append(c.cluster_id)
-                del self.clusters[cid]
-
-        for cid in to_remove:
-            if cid in self.clusters_by_cluster_id:
-                del self.clusters_by_cluster_id[cid]
-            else:
-                self.logger.warn("Something's up with clusters_by_cluster_id.")
+            if cid in self.client_uids:
+                continue
+            del self.clusters[cid]
+            del self.clusters_by_cluster_id[c.cluster_id]
 
     async def _recv_loop(self, ws: client.WebSocketClientProtocol) -> None:
         async for msg in ws:

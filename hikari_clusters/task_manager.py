@@ -104,8 +104,7 @@ class TaskManager:
                     self.logger.error("Exception in task callback:")
                     self.logger.error(traceback.format_exc())
             finally:
-                if tid in self._tasks:
-                    del self._tasks[tid]
+                self._tasks.pop(tid, None)
 
         t = asyncio.create_task(coro, name=name)
         self._tasks[tid] = _TaskWrapper(allow_cancel, allow_wait, t)

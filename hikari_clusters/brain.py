@@ -213,8 +213,7 @@ class Brain:
         else:
             return None
 
-        shards_to_launch = set(range(self.total_shards))
-        shards_to_launch.difference_update(all_shard_ids)
+        shards_to_launch = set(range(self.total_shards)) - all_shard_ids
         if not shards_to_launch:
             return None
 
