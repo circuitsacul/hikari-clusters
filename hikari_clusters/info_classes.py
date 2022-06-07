@@ -52,19 +52,19 @@ class ClusterInfo:
 
     @property
     def smallest_shard(self) -> int:
-        """Returns the min of the shard_ids of this cluster."""
+        """The min of the shard_ids of this cluster."""
 
         return min(self.shard_ids)
 
     @property
     def cluster_id(self) -> int:
-        """Returns the cluster id of this cluster."""
+        """The cluster id of this cluster."""
 
         return self.get_cluster_id(self.smallest_shard, len(self.shard_ids))
 
     @staticmethod
     def get_cluster_id(shard_id: int, shards_per_cluster: int) -> int:
-        """Generates a cluster id based on the id of a shard.
+        """Generate a cluster id based on the id of a shard.
 
         Assumes that all the shard ids of a cluster are adjacent."""
 
