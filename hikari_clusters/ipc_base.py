@@ -41,7 +41,7 @@ class IpcBase:
         if self.stop_future and not self.stop_future.done():
             self.stop_future.set_result(None)
         if self.ready_future and not self.ready_future.done():
-            self.ready_future.set_result(None)
+            self.ready_future.cancel()
 
     async def close(self) -> None:
         """Disconnect and close the client/server."""
@@ -50,7 +50,12 @@ class IpcBase:
         await self.tasks.wait_for_all()
 
     async def wait_until_ready(self) -> None:
-        """Wait until the client/server is either ready or shutting down."""
+        """Wait until the client/server is either ready or shutting down.
+
+        Raises:
+            asyncio.CancelledError: The client/server shut down before it was
+            ready.
+        """
 
         assert self.ready_future is not None
         await self.ready_future
