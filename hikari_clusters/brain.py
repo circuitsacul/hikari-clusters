@@ -178,7 +178,7 @@ class Brain:
         await self.stop_future
 
     async def close(self) -> None:
-        """Shuts the brain down."""
+        """Shut the brain down."""
 
         self.server.stop()
         await self.server.close()
@@ -190,7 +190,7 @@ class Brain:
         await self.tasks.wait_for_all()
 
     def stop(self) -> None:
-        """Tells the brain to stop."""
+        """Tell the brain to stop."""
 
         assert self.stop_future
         self.stop_future.set_result(None)

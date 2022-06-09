@@ -33,6 +33,7 @@ from websockets.exceptions import ConnectionClosedOK
 from websockets.legacy import server
 
 from . import close_codes, log, payload
+from .ipc_base import IpcBase
 from .task_manager import TaskManager
 
 __all__ = ("IpcServer",)
@@ -40,7 +41,7 @@ __all__ = ("IpcServer",)
 LOG = log.Logger("Ipc Server")
 
 
-class IpcServer:
+class IpcServer(IpcBase):
     """An ipc server.
 
     Allows for communication between :class:`~ipc_client.IpcClient`s
@@ -106,35 +107,10 @@ class IpcServer:
         self.tasks.create_task(self._send_client_uids_loop())
         self.tasks.create_task(self._start(), allow_cancel=False)
 
-    def stop(self) -> None:
-        """Tells the server to stop."""
-
-        if self.stop_future and not self.stop_future.done():
-            self.stop_future.set_result(None)
-        if self.ready_future and not self.ready_future.done():
-            self.ready_future.cancel()
-
-    async def close(self) -> None:
-        """Shuts the server down."""
-
-        self.tasks.cancel_all()
-        await self.tasks.wait_for_all()
-
-    async def wait_until_ready(self) -> None:
-        """Wait until the server is ready or shutting down."""
-
-        assert self.ready_future is not None
-        await self.ready_future
-
-    async def join(self) -> None:
-        """Wait until the server is shutting down."""
-
-        assert self.stop_future is not None
-        await self.stop_future
-
     async def _serve(
         self, ws: server.WebSocketServerProtocol, path: str
     ) -> None:
+        uid: int | None = None
         LOG.debug("Client connected.")
         try:
             uid = await self._handshake(ws)

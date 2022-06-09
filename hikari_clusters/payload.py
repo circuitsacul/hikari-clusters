@@ -64,7 +64,7 @@ class Payload(Generic[_P]):
     """The data of the payload."""
 
     def serialize(self) -> dict[str, Any]:
-        """Converts the payload to a dictionary."""
+        """Convert the payload to a dictionary."""
 
         return asdict(self)
 

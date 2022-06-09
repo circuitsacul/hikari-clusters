@@ -116,7 +116,7 @@ class Cluster:
 
     @property
     def shard_count(self) -> int:
-        """Returns the total number of shards across all clusters."""
+        """The total number of shards across all clusters."""
 
         return self._shard_count
 
@@ -159,7 +159,7 @@ class Cluster:
         await self.__tasks.wait_for_all()
 
     def stop(self) -> None:
-        """Tells the bot and IPC to close."""
+        """Tell the bot and IPC to close."""
 
         assert self.stop_future
         self.stop_future.set_result(None)

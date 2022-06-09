@@ -100,7 +100,7 @@ class Server:
 
     @property
     def clusters(self) -> list[ClusterInfo]:
-        """Returns a list of :class:`~info_classes.ClusterInfo`
+        """A list of :class:`~info_classes.ClusterInfo`
         that belong to this server."""
 
         return [
