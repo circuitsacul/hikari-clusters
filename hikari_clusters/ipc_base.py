@@ -30,6 +30,7 @@ from .task_manager import TaskManager
 
 class IpcBase:
     """Base class for IpcClient and IpcServer"""
+
     stop_future: asyncio.Future[None] | None
     ready_future: asyncio.Future[None] | None
     tasks: TaskManager
@@ -41,7 +42,7 @@ class IpcBase:
             self.stop_future.set_result(None)
         if self.ready_future and not self.ready_future.done():
             self.ready_future.set_result(None)
-    
+
     async def close(self) -> None:
         """Disconnect and close the client/server."""
 
