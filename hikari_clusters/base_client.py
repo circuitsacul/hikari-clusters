@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import pathlib
 
 from websockets.exceptions import ConnectionClosed
@@ -8,6 +9,8 @@ from websockets.exceptions import ConnectionClosed
 from .info_classes import BaseInfo
 from .ipc_client import IpcClient
 from .task_manager import TaskManager
+
+_LOG = logging.getLogger(__name__)
 
 
 class BaseClient:
@@ -106,5 +109,5 @@ class BaseClient:
                     self.get_info().asdict(),
                 )
             except ConnectionClosed:
-                return
+                _LOG.error("Failed to send client info.", exc_info=True)
             await asyncio.sleep(1)
