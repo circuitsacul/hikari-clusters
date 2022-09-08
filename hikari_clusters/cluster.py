@@ -25,22 +25,19 @@ from __future__ import annotations
 import asyncio
 import pathlib
 import signal
-from dataclasses import asdict
 from typing import Any, Type
 
 from hikari import GatewayBot
-from websockets.exceptions import ConnectionClosed
 
-from . import log, payload
+from . import payload
+from .base_client import BaseClient
 from .events import EventGroup
 from .info_classes import ClusterInfo
-from .ipc_client import IpcClient
-from .task_manager import TaskManager
 
 __all__ = ("Cluster", "ClusterLauncher")
 
 
-class Cluster:
+class Cluster(BaseClient):
     """A subclass of :class:`~hikari.GatewayBot` designed for
     use with hikari-clusters.
 
@@ -79,22 +76,22 @@ class Cluster:
 
         self._shard_count = shard_count
 
-        self.logger = log.Logger(f"Cluster {self.cluster_id}")
-        self.ipc = IpcClient(
+        super().__init__(
             ipc_uri,
             ipc_token,
-            self.logger,
             reconnect=False,
-            cmd_kwargs={"cluster": self},
-            event_kwargs={"cluster": self},
             certificate_path=certificate_path,
         )
-        self.ipc.events.include(_E)
-        self.__tasks = TaskManager(self.logger)
 
-        self.stop_future: asyncio.Future[None] | None = None
+        self.ipc.events.include(_E)
 
         self.bot.cluster = self  # type: ignore
+
+    def get_info(self) -> ClusterInfo:
+        assert self.ipc.uid
+        return ClusterInfo(
+            self.ipc.uid, self.server_uid, self.shard_ids, self.ready
+        )
 
     @property
     def cluster_id(self) -> int:
@@ -121,69 +118,19 @@ class Cluster:
         return self._shard_count
 
     async def start(self, **kwargs: Any) -> None:
-        """Start the IPC and then the bot.
-
-        Returns once all shards are ready."""
-
-        self.stop_future = asyncio.Future()
-
-        await self.ipc.start()
-
-        self.__tasks.create_task(self._broadcast_cluster_info_loop())
+        # <<<docstring from superclass>>>
+        await super().start()
 
         kwargs["shard_count"] = self.shard_count
         kwargs["shard_ids"] = self.shard_ids
 
         await self.bot.start(**kwargs)
 
-    async def join(self) -> None:
-        """Wait for the bot to close, and then return.
-
-        Does not ask the bot to close. Use :meth:`~Cluster.stop` to tell
-        the bot to stop."""
-
-        assert self.stop_future and self.ipc.stop_future
-
-        await asyncio.wait(
-            [self.stop_future, self.ipc.stop_future],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
     async def close(self) -> None:
+        # <<<docstring from superclass>>>
         await self.bot.close()
 
-        self.ipc.stop()
-        await self.ipc.close()
-
-        self.__tasks.cancel_all()
-        await self.__tasks.wait_for_all()
-
-    def stop(self) -> None:
-        """Tell the bot and IPC to close."""
-
-        assert self.stop_future
-        self.stop_future.set_result(None)
-
-    async def _broadcast_cluster_info_loop(self) -> None:
-        while True:
-            await self.ipc.wait_until_ready()
-            assert self.ipc.uid
-            try:
-                await self.ipc.send_event(
-                    self.ipc.client_uids,
-                    "set_cluster_info",
-                    asdict(
-                        ClusterInfo(
-                            self.ipc.uid,
-                            self.server_uid,
-                            self.shard_ids,
-                            self.ready,
-                        )
-                    ),
-                )
-            except ConnectionClosed:
-                return
-            await asyncio.sleep(1)
+        await super().close()
 
 
 class ClusterLauncher:

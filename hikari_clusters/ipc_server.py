@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import pathlib
 import ssl
 import traceback
@@ -32,13 +33,14 @@ from typing import Any, Iterable
 from websockets.exceptions import ConnectionClosedOK
 from websockets.legacy import server
 
-from . import close_codes, log, payload
+from . import close_codes, payload
 from .ipc_base import IpcBase
 from .task_manager import TaskManager
 
 __all__ = ("IpcServer",)
 
-LOG = log.Logger("Ipc Server")
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.INFO)
 
 
 class IpcServer(IpcBase):
@@ -69,7 +71,7 @@ class IpcServer(IpcBase):
         token: str,
         certificate_path: pathlib.Path | None = None,
     ) -> None:
-        self.tasks = TaskManager(LOG)
+        self.tasks = TaskManager()
 
         self.host = host
         self.port = port
@@ -111,19 +113,19 @@ class IpcServer(IpcBase):
         self, ws: server.WebSocketServerProtocol, path: str
     ) -> None:
         uid: int | None = None
-        LOG.debug("Client connected.")
+        _LOG.debug("Client connected.")
         try:
             uid = await self._handshake(ws)
             if uid is None:
                 return
             self.clients[uid] = ws
 
-            LOG.info(f"Client connected as {uid}")
+            _LOG.info(f"Client connected as {uid}")
 
             try:
                 while True:
                     msg = await ws.recv()
-                    LOG.debug(f"Received message: {msg!s}")
+                    _LOG.debug(f"Received message: {msg!s}")
                     pl = payload.deserialize_payload(json.loads(msg))
                     await self._dispatch(pl.recipients, msg)
             except ConnectionClosedOK:
@@ -132,31 +134,31 @@ class IpcServer(IpcBase):
                 del self.clients[uid]
 
         except Exception:
-            LOG.error(f"Exception in handler for client {uid}:")
-            LOG.error(traceback.format_exc())
+            _LOG.error(f"Exception in handler for client {uid}:")
+            _LOG.error(traceback.format_exc())
 
-        LOG.info(f"Client {uid} disconnected.")
+        _LOG.info(f"Client {uid} disconnected.")
 
     async def _start(self) -> None:
-        LOG.debug("Server starting up...")
+        _LOG.debug("Server starting up...")
         assert self.ready_future
         assert self.stop_future
         async with server.serve(
             self._serve, self.host, self.port, ssl=self.ssl_context
         ):
-            LOG.debug("Server started.")
+            _LOG.debug("Server started.")
             self.ready_future.set_result(None)
             await self.stop_future
-            LOG.debug("Stopping...")
-        LOG.debug("Server exited.")
+            _LOG.debug("Stopping...")
+        _LOG.debug("Server exited.")
 
     async def _handshake(
         self, ws: server.WebSocketServerProtocol
     ) -> int | None:
-        LOG.debug("Attempting handshake.")
+        _LOG.debug("Attempting handshake.")
         req: dict[str, Any] = json.loads(await ws.recv())
         if req.get("token") != self.token:
-            LOG.debug("Received invalid token.")
+            _LOG.debug("Received invalid token.")
             await ws.close(close_codes.INVALID_TOKEN, "Invalid Token")
             return None
 
@@ -164,7 +166,7 @@ class IpcServer(IpcBase):
         await ws.send(
             json.dumps({"uid": uid, "client_uids": list(self.clients.keys())})
         )
-        LOG.debug(f"Handshake successful, uid {uid}")
+        _LOG.debug(f"Handshake successful, uid {uid}")
         return uid
 
     async def _send_client_uids_loop(self) -> None:
@@ -183,4 +185,4 @@ class IpcServer(IpcBase):
             try:
                 await client.send(msg)
             except Exception:
-                LOG.error(traceback.format_exc())
+                _LOG.error(traceback.format_exc())

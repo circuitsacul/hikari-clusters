@@ -44,7 +44,7 @@ class MyBot(GatewayBot):
             return
         if event.content.startswith("!exec"):
             await self.cluster.ipc.send_command(
-                self.cluster.ipc.cluster_uids,
+                self.cluster.ipc.clusters,
                 "exec_code",
                 {"code": event.content[6:]},
             )

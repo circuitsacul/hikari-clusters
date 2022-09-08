@@ -23,14 +23,15 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import traceback
 from typing import Any, Coroutine, Generator, Iterable, Type, TypeVar
-
-from . import log
 
 __all__ = ("TaskManager",)
 
 _T = TypeVar("_T")
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.INFO)
 
 
 class _TaskWrapper:
@@ -47,8 +48,7 @@ class _TaskWrapper:
 class TaskManager:
     """Makes asyncio.Task managements slightly easier."""
 
-    def __init__(self, logger: log.Logger) -> None:
-        self.logger = logger
+    def __init__(self) -> None:
         self._tasks: dict[int, _TaskWrapper] = {}
         self._curr_tid = 0
 
@@ -101,8 +101,8 @@ class TaskManager:
                 pass
             except Exception as e:
                 if not isinstance(e, tuple(ignored_exceptions)):
-                    self.logger.error("Exception in task callback:")
-                    self.logger.error(traceback.format_exc())
+                    _LOG.error("Exception in task callback:")
+                    _LOG.error(traceback.format_exc())
             finally:
                 self._tasks.pop(tid, None)
 

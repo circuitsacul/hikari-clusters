@@ -22,14 +22,17 @@
 
 from __future__ import annotations
 
+import logging
 import traceback
 from typing import Any, Awaitable, Callable
 
-from . import log, payload
+from . import payload
 
 __all__ = ("EventHandler", "EventGroup", "IPC_EVENT")
 
 IPC_EVENT = Callable[..., Awaitable[None]]
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.INFO)
 
 
 class EventHandler:
@@ -37,18 +40,13 @@ class EventHandler:
 
     Parameters
     ----------
-    logger : :class:`~log.Logger`
-        The logger to use.
     event_kwargs : dict[str, Any], optional
         Extra kwargs to pass to event functions, default to None.
     """
 
-    def __init__(
-        self, logger: log.Logger, event_kwargs: dict[str, Any] | None = None
-    ) -> None:
+    def __init__(self, event_kwargs: dict[str, Any] | None = None) -> None:
         self.events: dict[str, list[IPC_EVENT]] = {}
         self.event_kwargs = event_kwargs or {}
-        self.logger = logger
 
     async def handle_event(self, pl: payload.EVENT) -> None:
         """Handle an event.
@@ -74,8 +72,8 @@ class EventHandler:
             try:
                 await func(pl, **kwargs)
             except Exception:
-                print("Ignoring Exception in handle_event:")
-                self.logger.error(traceback.format_exc())
+                _LOG.error("Ignoring Exception in handle_event:")
+                _LOG.error(traceback.format_exc())
 
     def include(self, group: EventGroup) -> None:
         """Add the events from an :class:`~EventGroup` to this

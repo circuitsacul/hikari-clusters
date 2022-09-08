@@ -24,20 +24,25 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import pathlib
 import ssl
-from typing import Any, Iterable
+from typing import Any, Iterable, TypeVar, cast
 
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK
 from websockets.legacy import client
 
-from . import close_codes, exceptions, log, payload
+from . import close_codes, exceptions, payload
 from .callbacks import CallbackHandler, NoResponse
 from .commands import CommandHandler
 from .events import EventGroup, EventHandler
-from .info_classes import ClusterInfo, ServerInfo
+from .info_classes import BaseInfo, BrainInfo, ClusterInfo, ServerInfo
 from .ipc_base import IpcBase
 from .task_manager import TaskManager
+
+_BI_T = TypeVar("_BI_T", bound=BaseInfo)
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.INFO)
 
 __all__ = ("IpcClient",)
 
@@ -51,17 +56,9 @@ class IpcClient(IpcBase):
         The uri of the ipc server.
     token : str
         The token required by the ipc server.
-    logger : :class:`~log.Logger`
-        The logger used by the clients parent.
     reconnect : bool
         Whether or not to try to reconnect after disconnection, by default
         True.
-    cmd_kwargs : dict[str, Any], optional
-        Command arguments to pass to :class:`~commands.CommandHandler`, by
-        default None.
-    event_kwargs : dict[str, Any], optional
-        Event arguments to pass to :class:`~events.EventHandler`, by
-        default None.
     certificate_path : pathlib.Path, optional
         Required for secure (wss) connections, by default None.
     """
@@ -70,23 +67,14 @@ class IpcClient(IpcBase):
         self,
         uri: str,
         token: str,
-        logger: log.Logger,
         reconnect: bool = True,
-        cmd_kwargs: dict[str, Any] | None = None,
-        event_kwargs: dict[str, Any] | None = None,
         certificate_path: pathlib.Path | None = None,
     ) -> None:
-        self.logger = logger
-        self.tasks = TaskManager(logger)
-
-        cmd_kwargs = cmd_kwargs or {}
-        event_kwargs = event_kwargs or {}
-        cmd_kwargs["_ipc_client"] = self
-        event_kwargs["_ipc_client"] = self
+        self.tasks = TaskManager()
 
         self.callbacks = CallbackHandler(self)
-        self.commands = CommandHandler(self, cmd_kwargs)
-        self.events = EventHandler(logger, event_kwargs)
+        self.commands = CommandHandler(self, {"_ipc_client": self})
+        self.events = EventHandler({"_ipc_client": self})
 
         self.events.include(_E)
 
@@ -94,6 +82,7 @@ class IpcClient(IpcBase):
         self.token = token
         self.reconnect = reconnect
 
+        self.certificate_path = certificate_path
         self.ssl_context: ssl.SSLContext | None
         if certificate_path is not None:
             self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -103,14 +92,7 @@ class IpcClient(IpcBase):
 
         self.client_uids: set[int] = set()
         """A set of all IPC uids representing every connected client."""
-        self.brain_uid: int | None = None
-        """The IPC uid of the brain's client."""
-        self.servers: dict[int, ServerInfo] = {}
-        """Maps the IPC uids for each server to its ServerInfo class."""
-        self.clusters: dict[int, ClusterInfo] = {}
-        """Maps the IPC uids for each cluster to its ClusterInfo class."""
-        self.clusters_by_cluster_id: dict[int, ClusterInfo] = {}
-        """Maps the cluster id for each cluster to its ClusterInfo class."""
+        self.clients: dict[int, dict[int, BaseInfo]] = {}
 
         self._ws: client.WebSocketClientProtocol | None = None
         self.uid: int | None = None
@@ -119,16 +101,32 @@ class IpcClient(IpcBase):
         self.ready_future: asyncio.Future[None] | None = None
 
     @property
-    def server_uids(self) -> set[int]:
-        """A set of all IPC uids representing every connected server."""
+    def servers(self) -> dict[int, ServerInfo]:
+        """Shorthand for IpcClient.get_clients(ServerInfo)"""
 
-        return set(self.servers.keys())
+        return self.get_clients(ServerInfo)
 
     @property
-    def cluster_uids(self) -> set[int]:
-        """A set of all IPC uids representing every connected cluster."""
+    def clusters(self) -> dict[int, ClusterInfo]:
+        """Shorthand for IpcClient.get_clients(ClusterInfo)"""
 
-        return set(self.clusters.keys())
+        return self.get_clients(ClusterInfo)
+
+    @property
+    def brain(self) -> BrainInfo | None:
+        """The IPC UID of the brain."""
+
+        brains = self.get_clients(BrainInfo)
+        if not brains:
+            return None
+        elif len(brains) > 1:
+            _LOG.warning("More than one brain connected.")
+        return brains[max(brains.keys())]
+
+    def get_clients(self, client: type[_BI_T]) -> dict[int, _BI_T]:
+        return cast(
+            "dict[int, _BI_T]", self.clients.get(client._info_class_id, {})
+        )
 
     def all_shards(self) -> set[int]:
         """Get all shard ids.
@@ -138,10 +136,11 @@ class IpcClient(IpcBase):
 
         all_shards: set[int] = set()
         for c in self.clusters.values():
+            servers = self.servers
             if not (
                 c.ready
-                and c.server_uid in self.servers
-                and c.uid in self.servers[c.server_uid].cluster_uids
+                and c.server_uid in servers
+                and c.uid in servers[c.server_uid].cluster_uids
             ):
                 continue
             all_shards.update(c.shard_ids)
@@ -290,14 +289,14 @@ class IpcClient(IpcBase):
         return cb.resps
 
     async def _start(self) -> None:
-        self.logger.debug("Attempting connection to IPC...")
+        _LOG.debug("Attempting connection to IPC...")
         assert self.ready_future
         async for ws in client.connect(self.uri, ssl=self.ssl_context):
             reconnect = self.reconnect
             await self._handshake(ws)
             self._ws = ws
             self.ready_future.set_result(None)
-            self.logger.info(f"Connected successfully as {self.uid}.")
+            _LOG.info(f"Connected successfully as {self.uid}.")
             try:
                 await self._recv_loop(ws)
             except ConnectionClosedOK:
@@ -310,25 +309,23 @@ class IpcClient(IpcBase):
             finally:
                 self._ws = None
                 self.ready_future = asyncio.Future()
-                self.logger.info("Disconnected.")
+                _LOG.info("Disconnected.")
 
                 self.client_uids.clear()
-                self.clusters_by_cluster_id.clear()
-                self.clusters.clear()
-                self.servers.clear()
+                self.clients.clear()
 
                 if reconnect:
-                    self.logger.info("Attempting reconnection...")
+                    _LOG.info("Attempting reconnection...")
                 else:
                     return
 
     async def _handshake(self, ws: client.WebSocketClientProtocol) -> None:
-        self.logger.debug("Attempting handshake...")
+        _LOG.debug("Attempting handshake...")
         await ws.send(json.dumps({"token": self.token}))
         data: dict[str, Any] = json.loads(await ws.recv())
         self.uid = data["uid"]
         self.client_uids = set(data["client_uids"])
-        self.logger.debug(f"Handshake successful, uid {self.uid}")
+        _LOG.debug(f"Handshake successful, uid {self.uid}")
 
     def _update_clients(self, client_uids: set[int]) -> None:
         if self.client_uids.difference(client_uids):
@@ -343,11 +340,10 @@ class IpcClient(IpcBase):
             if cid in self.client_uids:
                 continue
             del self.clusters[cid]
-            del self.clusters_by_cluster_id[c.cluster_id]
 
     async def _recv_loop(self, ws: client.WebSocketClientProtocol) -> None:
         async for msg in ws:
-            self.logger.debug(f"Received message: {msg!s}")
+            _LOG.debug(f"Received message: {msg!s}")
             data: dict[str, Any] = json.loads(msg)
             if data.get("internal", False):
                 self._update_clients(set(data["client_uids"]))
@@ -378,32 +374,9 @@ class IpcClient(IpcBase):
 _E = EventGroup()
 
 
-@_E.add("set_brain_uid")
-async def set_brain_uid(pl: payload.EVENT, _ipc_client: IpcClient) -> None:
+@_E.add("set_info_class")
+async def set_info_class(pl: payload.EVENT, _ipc_client: IpcClient) -> None:
     assert pl.data.data is not None
-    uid = pl.data.data["uid"]
-    _ipc_client.logger.debug(f"Setting brain uid to {uid}.")
-    _ipc_client.brain_uid = pl.data.data["uid"]
-
-
-@_E.add("set_cluster_info")
-async def update_cluster_info(
-    pl: payload.EVENT, _ipc_client: IpcClient
-) -> None:
-    assert pl.data.data is not None
-    cinfo = ClusterInfo(**pl.data.data)
-    _ipc_client.logger.debug(
-        f"Updating info for Cluster {cinfo.cluster_id} ({cinfo.uid})"
-    )
-    _ipc_client.clusters_by_cluster_id[cinfo.cluster_id] = cinfo
-    _ipc_client.clusters[cinfo.uid] = cinfo
-
-
-@_E.add("set_server_info")
-async def update_server_info(
-    pl: payload.EVENT, _ipc_client: IpcClient
-) -> None:
-    assert pl.data.data is not None
-    sinfo = ServerInfo(**pl.data.data)
-    _ipc_client.logger.debug(f"Updating info for Server {sinfo.uid}")
-    _ipc_client.servers[sinfo.uid] = sinfo
+    info = BaseInfo.fromdict(pl.data.data)
+    _LOG.debug("Setting info class {info}.")
+    _ipc_client.clients.setdefault(info._info_class_id, {})[info.uid] = info

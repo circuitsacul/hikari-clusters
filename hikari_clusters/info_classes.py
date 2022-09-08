@@ -22,13 +22,36 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from typing import Any
 
-__all__ = ("ServerInfo", "ClusterInfo")
+__all__ = ("ServerInfo", "ClusterInfo", "BaseInfo", "BrainInfo")
+
+
+class BaseInfo:
+    uid: int
+    _next_info_class_id: int = 0
+    _info_classes: dict[int, type[BaseInfo]] = {}
+    _info_class_id: int
+
+    def __init_subclass__(cls) -> None:
+        cls._info_class_id = BaseInfo._next_info_class_id
+        BaseInfo._next_info_class_id += 1
+        BaseInfo._info_classes[cls._info_class_id] = cls
+
+    def asdict(self) -> dict[str, Any]:
+        dct = asdict(self)
+        dct["_info_class_id"] = self._info_class_id
+        return dct
+
+    @staticmethod
+    def fromdict(data: dict[str, Any]) -> BaseInfo:
+        cls = BaseInfo._info_classes[data.pop("_info_class_id")]
+        return cls(**data)
 
 
 @dataclass
-class ServerInfo:
+class ServerInfo(BaseInfo):
     """A representation of a :class:`~server.Server`."""
 
     uid: int
@@ -38,7 +61,7 @@ class ServerInfo:
 
 
 @dataclass
-class ClusterInfo:
+class ClusterInfo(BaseInfo):
     """A representation of a :class:`~cluster.Cluster`."""
 
     uid: int
@@ -69,3 +92,9 @@ class ClusterInfo:
         Assumes that all the shard ids of a cluster are adjacent."""
 
         return shard_id // shards_per_cluster
+
+
+@dataclass
+class BrainInfo(BaseInfo):
+    uid: int
+    """The ipc uid of the brain."""

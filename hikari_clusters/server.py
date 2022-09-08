@@ -23,33 +23,30 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
+import logging
 import multiprocessing
 import pathlib
 import signal
-from dataclasses import asdict
 from typing import TYPE_CHECKING, Any
-
-from websockets.exceptions import ConnectionClosed
 
 from hikari_clusters import payload
 from hikari_clusters.info_classes import ClusterInfo, ServerInfo
 
-from . import log
+from .base_client import BaseClient
 from .commands import CommandGroup
 from .events import EventGroup
 from .ipc_client import IpcClient
-from .task_manager import TaskManager
 
 if TYPE_CHECKING:
     from .cluster import ClusterLauncher
 
 __all__ = ("Server",)
 
-LOG = log.Logger("Server")
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.INFO)
 
 
-class Server:
+class Server(BaseClient):
     """A group of clusters.
 
     Parameters
@@ -74,20 +71,18 @@ class Server:
         cluster_launcher: ClusterLauncher,
         certificate_path: pathlib.Path | str | None = None,
     ) -> None:
-        self.tasks = TaskManager(LOG)
-
         if isinstance(certificate_path, str):
             certificate_path = pathlib.Path(certificate_path)
 
-        self.ipc = IpcClient(
+        super().__init__(
             IpcClient.get_uri(host, port, certificate_path is not None),
             token,
-            LOG,
-            cmd_kwargs={"server": self},
-            event_kwargs={"server": self},
-            certificate_path=certificate_path,
+            True,
+            certificate_path,
         )
-        self.certificate_path = certificate_path
+
+        self.ipc.commands.cmd_kwargs["server"] = self
+        self.ipc.events.event_kwargs["server"] = self
         self.ipc.commands.include(_C)
         self.ipc.events.include(_E)
 
@@ -95,8 +90,6 @@ class Server:
         """Maps the smallest shard id of the cluster to it's process."""
 
         self.cluster_launcher = cluster_launcher
-
-        self.stop_future: asyncio.Future[None] | None = None
 
     @property
     def clusters(self) -> list[ClusterInfo]:
@@ -108,6 +101,10 @@ class Server:
             for c in self.ipc.clusters.values()
             if c.server_uid == self.ipc.uid
         ]
+
+    def get_info(self) -> ServerInfo:
+        assert self.ipc.uid
+        return ServerInfo(self.ipc.uid, [c.uid for c in self.clusters])
 
     def run(self) -> None:
         """Run the server, wait for the server to stop, and then shutdown."""
@@ -122,54 +119,30 @@ class Server:
         loop.run_until_complete(self.close())
 
     async def start(self) -> None:
-        """Start the server.
+        # <<<docstring from superclass>>>
+        await super().start()
 
-        Returns as soon as all tasks are completed. Returning does not mean
-        that the server is ready."""
+        self.tasks.create_task(self._loop_cleanup_processes())
 
-        self.stop_future = asyncio.Future()
-        self.tasks.create_task(self._broadcast_server_info_loop())
-        await self.ipc.start()
-
-    async def join(self) -> None:
-        """Wait for the server to stop."""
-
-        assert self.stop_future and self.ipc.stop_future
-        await asyncio.wait(
-            [self.stop_future, self.ipc.stop_future],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-    async def close(self) -> None:
-        """Shutdown the server and all clusters that belong to this server."""
-
-        self.ipc.stop()
-        await self.ipc.close()
-
-        self.tasks.cancel_all()
-        await self.tasks.wait_for_all()
-
-    def stop(self) -> None:
-        """Tell the server to stop."""
-
-        assert self.stop_future
-        self.stop_future.set_result(None)
-
-    async def _broadcast_server_info_loop(self) -> None:
+    async def _loop_cleanup_processes(self) -> None:
         while True:
+            await asyncio.sleep(5)
             await self.ipc.wait_until_ready()
-            assert self.ipc.uid
-            with contextlib.suppress(ConnectionClosed):
-                await self.ipc.send_event(
-                    self.ipc.client_uids,
-                    "set_server_info",
-                    asdict(
-                        ServerInfo(
-                            self.ipc.uid, [c.uid for c in self.clusters]
-                        )
-                    ),
-                )
-            await asyncio.sleep(1)
+            if (brain := self.ipc.brain) is None:
+                continue
+
+            dead_procs: list[int] = []
+            for smallest_shard_id, proc in self.cluster_processes.items():
+                if not proc.is_alive():
+                    await self.ipc.send_event(
+                        [brain.uid],
+                        "cluster_died",
+                        {"smallest_shard_id": smallest_shard_id},
+                    )
+                    dead_procs.append(smallest_shard_id)
+
+            for shard_id in dead_procs:
+                del self.cluster_processes[shard_id]
 
 
 _C = CommandGroup()
@@ -178,7 +151,7 @@ _C = CommandGroup()
 @_C.add("launch_cluster")
 async def start_cluster(pl: payload.COMMAND, server: Server) -> None:
     assert pl.data.data is not None
-    LOG.info(f"Launching Cluster with shard_ids {pl.data.data['shard_ids']}")
+    _LOG.info(f"Launching Cluster with shard_ids {pl.data.data['shard_ids']}")
     p = multiprocessing.Process(
         target=server.cluster_launcher.launch_cluster,
         kwargs={
@@ -187,7 +160,7 @@ async def start_cluster(pl: payload.COMMAND, server: Server) -> None:
             "shard_ids": pl.data.data["shard_ids"],
             "shard_count": pl.data.data["shard_count"],
             "server_uid": server.ipc.uid,
-            "certificate_path": server.certificate_path,
+            "certificate_path": server.ipc.certificate_path,
         },
     )
     p.start()
