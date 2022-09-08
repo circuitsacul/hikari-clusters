@@ -49,6 +49,9 @@ class BaseInfo:
         cls = BaseInfo._info_classes[data.pop("_info_class_id")]
         return cls(**data)
 
+    def __int__(self) -> int:
+        return self.uid
+
 
 @dataclass
 class ServerInfo(BaseInfo):
