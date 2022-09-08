@@ -27,18 +27,20 @@ import pathlib
 import signal
 from typing import Any
 
+from hikari_clusters.base_client import BaseClient
+from hikari_clusters.info_classes import BrainInfo
+
 from . import log, payload
 from .events import EventGroup
 from .ipc_client import IpcClient
 from .ipc_server import IpcServer
-from .task_manager import TaskManager
 
 __all__ = ("Brain",)
 
 LOG = log.Logger("Brain")
 
 
-class Brain:
+class Brain(BaseClient):
     """The brain of the bot.
 
     Allows for comunication between clusters and servers,
@@ -73,29 +75,30 @@ class Brain:
         shards_per_cluster: int,
         certificate_path: pathlib.Path | str | None = None,
     ) -> None:
-        self.tasks = TaskManager(LOG)
+        certificate_path = (
+            pathlib.Path(certificate_path)
+            if isinstance(certificate_path, str)
+            else certificate_path
+        )
+
+        super().__init__(
+            IpcClient.get_uri(host, port, certificate_path is not None),
+            token,
+            True,
+            certificate_path,
+        )
 
         self.total_servers = total_servers
         self.cluster_per_server = clusters_per_server
         self.shards_per_cluster = shards_per_cluster
 
-        if isinstance(certificate_path, str):
-            certificate_path = pathlib.Path(certificate_path)
-
         self.server = IpcServer(
             host, port, token, certificate_path=certificate_path
         )
-        self.ipc = IpcClient(
-            IpcClient.get_uri(host, port, certificate_path is not None),
-            token,
-            LOG,
-            certificate_path=certificate_path,
-            cmd_kwargs={"brain": self},
-            event_kwargs={"brain": self},
-        )
-        self.ipc.events.include(_E)
 
-        self.stop_future: asyncio.Future[None] | None = None
+        self.ipc.commands.cmd_kwargs["brain"] = self
+        self.ipc.events.event_kwargs["brain"] = self
+        self.ipc.events.include(_E)
 
         self._waiting_for: tuple[int, int] | None = None
 
@@ -128,7 +131,7 @@ class Brain:
         if self._waiting_for is not None:
             server_uid, smallest_shard = self._waiting_for
             if (
-                server_uid not in self.ipc.server_uids
+                server_uid not in self.ipc.servers
                 or smallest_shard in self.ipc.all_shards()
             ):
                 # `server_uid not in self.ipc.server_uids`
@@ -148,6 +151,10 @@ class Brain:
     def waiting_for(self, value: tuple[int, int] | None) -> None:
         self._waiting_for = value
 
+    def get_info(self) -> BrainInfo:
+        assert self.ipc.uid
+        return BrainInfo(uid=self.ipc.uid)
+
     def run(self) -> None:
         """Run the brain, wait for the brain to stop, then cleanup."""
 
@@ -165,17 +172,11 @@ class Brain:
 
         Returns as soon as all tasks have started.
         """
-        self.stop_future = asyncio.Future()
-        self.tasks.create_task(self._send_brain_uid_loop())
+
+        await super().start()
+
         self.tasks.create_task(self._main_loop())
         await self.server.start()
-        await self.ipc.start()
-
-    async def join(self) -> None:
-        """Wait for the brain to stop."""
-
-        assert self.stop_future
-        await self.stop_future
 
     async def close(self) -> None:
         """Shut the brain down."""
@@ -183,20 +184,10 @@ class Brain:
         self.server.stop()
         await self.server.close()
 
-        self.ipc.stop()
-        await self.ipc.close()
-
-        self.tasks.cancel_all()
-        await self.tasks.wait_for_all()
-
-    def stop(self) -> None:
-        """Tell the brain to stop."""
-
-        assert self.stop_future
-        self.stop_future.set_result(None)
+        await super().close()
 
     def _get_next_cluster_to_launch(self) -> tuple[int, list[int]] | None:
-        if len(self.ipc.server_uids) == 0:
+        if len(self.ipc.servers) == 0:
             return None
 
         if not all(c.ready for c in self.ipc.clusters.values()):
@@ -218,14 +209,6 @@ class Brain:
             return None
 
         return s.uid, list(shards_to_launch)[: self.shards_per_cluster]
-
-    async def _send_brain_uid_loop(self) -> None:
-        while True:
-            await self.ipc.wait_until_ready()
-            await self.ipc.send_event(
-                self.ipc.client_uids, "set_brain_uid", {"uid": self.ipc.uid}
-            )
-            await asyncio.sleep(1)
 
     async def _main_loop(self) -> None:
         await self.ipc.wait_until_ready()
@@ -257,5 +240,13 @@ async def brain_stop(pl: payload.EVENT, brain: Brain) -> None:
 
 @_E.add("shutdown")
 async def shutdown(pl: payload.EVENT, brain: Brain) -> None:
-    await brain.ipc.send_event(brain.ipc.server_uids, "server_stop")
+    await brain.ipc.send_event(brain.ipc.servers.keys(), "server_stop")
     brain.stop()
+
+
+@_E.add("cluster_died")
+async def cluster_died(pl: payload.EVENT, brain: Brain) -> None:
+    assert pl.data.data is not None
+    shard_id = pl.data.data["smallest_shard_id"]
+    if brain._waiting_for is not None and brain._waiting_for[1] == shard_id:
+        brain.waiting_for = None

@@ -29,9 +29,10 @@ https://github.com/trigondev/hikari-clusters
 from importlib.metadata import version
 
 from . import close_codes, commands, events, exceptions, payload
+from .base_client import BaseClient
 from .brain import Brain
 from .cluster import Cluster, ClusterLauncher
-from .info_classes import ClusterInfo, ServerInfo
+from .info_classes import BaseInfo, BrainInfo, ClusterInfo, ServerInfo
 from .ipc_client import IpcClient
 from .ipc_server import IpcServer
 from .server import Server
@@ -45,8 +46,11 @@ __all__ = (
     "Cluster",
     "ClusterLauncher",
     "Server",
+    "BaseClient",
     "ClusterInfo",
     "ServerInfo",
+    "BrainInfo",
+    "BaseInfo",
     "payload",
     "events",
     "commands",
