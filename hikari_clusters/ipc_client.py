@@ -76,20 +76,13 @@ class IpcClient(IpcBase):
         uri: str,
         token: str,
         reconnect: bool = True,
-        cmd_kwargs: dict[str, Any] | None = None,
-        event_kwargs: dict[str, Any] | None = None,
         certificate_path: pathlib.Path | None = None,
     ) -> None:
         self.tasks = TaskManager()
 
-        cmd_kwargs = cmd_kwargs or {}
-        event_kwargs = event_kwargs or {}
-        cmd_kwargs["_ipc_client"] = self
-        event_kwargs["_ipc_client"] = self
-
         self.callbacks = CallbackHandler(self)
-        self.commands = CommandHandler(self, cmd_kwargs)
-        self.events = EventHandler(event_kwargs)
+        self.commands = CommandHandler(self, {"_ipc_client": self})
+        self.events = EventHandler({"_ipc_client": self})
 
         self.events.include(_E)
 
