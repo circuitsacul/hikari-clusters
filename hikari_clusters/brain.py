@@ -30,14 +30,12 @@ from typing import Any
 from hikari_clusters.base_client import BaseClient
 from hikari_clusters.info_classes import BrainInfo
 
-from . import log, payload
+from . import payload
 from .events import EventGroup
 from .ipc_client import IpcClient
 from .ipc_server import IpcServer
 
 __all__ = ("Brain",)
-
-LOG = log.Logger("Brain")
 
 
 class Brain(BaseClient):

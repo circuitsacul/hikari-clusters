@@ -29,7 +29,7 @@ from typing import Any, Type
 
 from hikari import GatewayBot
 
-from . import log, payload
+from . import payload
 from .base_client import BaseClient
 from .events import EventGroup
 from .info_classes import ClusterInfo
@@ -75,8 +75,6 @@ class Cluster(BaseClient):
         """The IPC uid of the server that launched this cluster."""
 
         self._shard_count = shard_count
-
-        self.logger = log.Logger(f"Cluster {self.cluster_id}")
 
         super().__init__(
             ipc_uri,

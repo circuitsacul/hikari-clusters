@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import pathlib
 import ssl
 from typing import Any, Iterable, TypeVar, cast
@@ -31,7 +32,7 @@ from typing import Any, Iterable, TypeVar, cast
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK
 from websockets.legacy import client
 
-from . import close_codes, exceptions, log, payload
+from . import close_codes, exceptions, payload
 from .callbacks import CallbackHandler, NoResponse
 from .commands import CommandHandler
 from .events import EventGroup, EventHandler
@@ -40,6 +41,8 @@ from .ipc_base import IpcBase
 from .task_manager import TaskManager
 
 _BI_T = TypeVar("_BI_T", bound=BaseInfo)
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.INFO)
 
 __all__ = ("IpcClient",)
 
@@ -72,14 +75,12 @@ class IpcClient(IpcBase):
         self,
         uri: str,
         token: str,
-        logger: log.Logger,
         reconnect: bool = True,
         cmd_kwargs: dict[str, Any] | None = None,
         event_kwargs: dict[str, Any] | None = None,
         certificate_path: pathlib.Path | None = None,
     ) -> None:
-        self.logger = logger
-        self.tasks = TaskManager(logger)
+        self.tasks = TaskManager()
 
         cmd_kwargs = cmd_kwargs or {}
         event_kwargs = event_kwargs or {}
@@ -88,7 +89,7 @@ class IpcClient(IpcBase):
 
         self.callbacks = CallbackHandler(self)
         self.commands = CommandHandler(self, cmd_kwargs)
-        self.events = EventHandler(logger, event_kwargs)
+        self.events = EventHandler(event_kwargs)
 
         self.events.include(_E)
 
@@ -132,7 +133,7 @@ class IpcClient(IpcBase):
 
         brains = self.get_clients(BrainInfo)
         if len(brains) > 1:
-            self.logger.warning("More than one brain connected.")
+            _LOG.warning("More than one brain connected.")
         return brains[max(brains.keys())]
 
     def get_clients(self, client: type[_BI_T]) -> dict[int, _BI_T]:
@@ -301,14 +302,14 @@ class IpcClient(IpcBase):
         return cb.resps
 
     async def _start(self) -> None:
-        self.logger.debug("Attempting connection to IPC...")
+        _LOG.debug("Attempting connection to IPC...")
         assert self.ready_future
         async for ws in client.connect(self.uri, ssl=self.ssl_context):
             reconnect = self.reconnect
             await self._handshake(ws)
             self._ws = ws
             self.ready_future.set_result(None)
-            self.logger.info(f"Connected successfully as {self.uid}.")
+            _LOG.info(f"Connected successfully as {self.uid}.")
             try:
                 await self._recv_loop(ws)
             except ConnectionClosedOK:
@@ -321,23 +322,23 @@ class IpcClient(IpcBase):
             finally:
                 self._ws = None
                 self.ready_future = asyncio.Future()
-                self.logger.info("Disconnected.")
+                _LOG.info("Disconnected.")
 
                 self.client_uids.clear()
                 self.clients.clear()
 
                 if reconnect:
-                    self.logger.info("Attempting reconnection...")
+                    _LOG.info("Attempting reconnection...")
                 else:
                     return
 
     async def _handshake(self, ws: client.WebSocketClientProtocol) -> None:
-        self.logger.debug("Attempting handshake...")
+        _LOG.debug("Attempting handshake...")
         await ws.send(json.dumps({"token": self.token}))
         data: dict[str, Any] = json.loads(await ws.recv())
         self.uid = data["uid"]
         self.client_uids = set(data["client_uids"])
-        self.logger.debug(f"Handshake successful, uid {self.uid}")
+        _LOG.debug(f"Handshake successful, uid {self.uid}")
 
     def _update_clients(self, client_uids: set[int]) -> None:
         if self.client_uids.difference(client_uids):
@@ -355,7 +356,7 @@ class IpcClient(IpcBase):
 
     async def _recv_loop(self, ws: client.WebSocketClientProtocol) -> None:
         async for msg in ws:
-            self.logger.debug(f"Received message: {msg!s}")
+            _LOG.debug(f"Received message: {msg!s}")
             data: dict[str, Any] = json.loads(msg)
             if data.get("internal", False):
                 self._update_clients(set(data["client_uids"]))
@@ -390,5 +391,5 @@ _E = EventGroup()
 async def set_info_class(pl: payload.EVENT, _ipc_client: IpcClient) -> None:
     assert pl.data.data is not None
     info = BaseInfo.fromdict(pl.data.data)
-    _ipc_client.logger.debug("Setting info class {info}.")
+    _LOG.debug("Setting info class {info}.")
     _ipc_client.clients.setdefault(info._info_class_id, {})[info.uid] = info

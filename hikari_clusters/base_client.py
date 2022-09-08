@@ -5,12 +5,9 @@ import pathlib
 
 from websockets.exceptions import ConnectionClosed
 
-from . import log
 from .info_classes import BaseInfo
 from .ipc_client import IpcClient
 from .task_manager import TaskManager
-
-_LOG = log.Logger(__file__)
 
 
 class BaseClient:
@@ -24,11 +21,10 @@ class BaseClient:
         if isinstance(certificate_path, str):
             certificate_path = pathlib.Path(certificate_path)
 
-        self.tasks = TaskManager(_LOG)
+        self.tasks = TaskManager()
         self.ipc = IpcClient(
             uri=ipc_uri,
             token=token,
-            logger=_LOG,
             reconnect=reconnect,
             certificate_path=certificate_path,
         )

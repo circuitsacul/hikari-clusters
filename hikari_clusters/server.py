@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import multiprocessing
 import pathlib
 import signal
@@ -31,7 +32,6 @@ from typing import TYPE_CHECKING, Any
 from hikari_clusters import payload
 from hikari_clusters.info_classes import ClusterInfo, ServerInfo
 
-from . import log
 from .base_client import BaseClient
 from .commands import CommandGroup
 from .events import EventGroup
@@ -42,7 +42,8 @@ if TYPE_CHECKING:
 
 __all__ = ("Server",)
 
-LOG = log.Logger("Server")
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.INFO)
 
 
 class Server(BaseClient):
@@ -154,7 +155,7 @@ _C = CommandGroup()
 @_C.add("launch_cluster")
 async def start_cluster(pl: payload.COMMAND, server: Server) -> None:
     assert pl.data.data is not None
-    LOG.info(f"Launching Cluster with shard_ids {pl.data.data['shard_ids']}")
+    _LOG.info(f"Launching Cluster with shard_ids {pl.data.data['shard_ids']}")
     p = multiprocessing.Process(
         target=server.cluster_launcher.launch_cluster,
         kwargs={
