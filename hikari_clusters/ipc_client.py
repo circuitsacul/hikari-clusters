@@ -27,7 +27,7 @@ import json
 import logging
 import pathlib
 import ssl
-from typing import Any, Iterable, TypeVar, Union, cast
+from typing import Any, Collection, Iterable, TypeVar, Union, cast
 
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK
 from websockets.legacy import client
@@ -49,8 +49,8 @@ __all__ = ("IpcClient",)
 _TO = Union[Iterable[Union[BaseInfo, int]], BaseInfo, int]
 
 
-def _parse_to(to: _TO) -> Iterable[int]:
-    return map(int, to) if isinstance(to, Iterable) else [int(to)]
+def _parse_to(to: _TO) -> set[int]:
+    return set(map(int, to)) if isinstance(to, Iterable) else {int(to)}
 
 
 class IpcClient(IpcBase):
@@ -365,7 +365,7 @@ class IpcClient(IpcBase):
             self.callbacks.handle_response(pl)
 
     async def _send(
-        self, to: Iterable[int], pl_data: payload.PAYLOAD_DATA
+        self, to: Collection[int], pl_data: payload.PAYLOAD_DATA
     ) -> None:
         assert self.uid is not None
         pl = payload.Payload(

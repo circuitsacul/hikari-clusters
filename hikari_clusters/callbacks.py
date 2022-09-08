@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Generator, Iterable
+from typing import TYPE_CHECKING, Collection, Generator
 
 from . import payload
 
@@ -55,7 +55,7 @@ class Callback:
 
     __slots__ = ("ipc", "key", "responders", "resps", "future")
 
-    def __init__(self, ipc: IpcClient, key: int, responders: Iterable[int]):
+    def __init__(self, ipc: IpcClient, key: int, responders: Collection[int]):
         self.ipc = ipc
         self.key = key
         self.responders = responders
@@ -77,8 +77,7 @@ class Callback:
             self.resps[uid] = NoResponse()
 
     def _get_missing(self) -> set[int]:
-        responded = self.resps.keys()
-        return {uid for uid in self.responders if uid not in responded}
+        return {uid for uid in self.responders if uid not in self.resps}
 
     def _handle_response(self, pl: payload.RESPONSE) -> None:
         self.resps[pl.author] = pl
@@ -136,7 +135,7 @@ class CallbackHandler:
 
     @contextmanager
     def callback(
-        self, responders: Iterable[int]
+        self, responders: Collection[int]
     ) -> Generator[Callback, None, None]:
         """Context manager for easy callback managing.
 
