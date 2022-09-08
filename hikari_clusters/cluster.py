@@ -118,10 +118,7 @@ class Cluster(BaseClient):
         return self._shard_count
 
     async def start(self, **kwargs: Any) -> None:
-        """Start the IPC and then the bot.
-
-        Returns once all shards are ready."""
-
+        # <<<docstring from superclass>>>
         await super().start()
 
         kwargs["shard_count"] = self.shard_count
@@ -130,6 +127,7 @@ class Cluster(BaseClient):
         await self.bot.start(**kwargs)
 
     async def close(self) -> None:
+        # <<<docstring from superclass>>>
         await self.bot.close()
 
         await super().close()

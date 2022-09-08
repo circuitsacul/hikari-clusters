@@ -11,6 +11,22 @@ from .task_manager import TaskManager
 
 
 class BaseClient:
+    """The base client, which contains an IpcClient.
+
+    Parameters
+    ----------
+    ipc_uri : str
+        The URI of the brain.
+    token : str
+        The token for the IPC server.
+    reconnect : bool
+        Whether to automatically reconnect if the connection
+        is lost. Defaults to True.
+    certificate_path : pathlib.Path | str | None
+        The path to your certificate, which allos for secure
+        connection over the IPC. Defaults to None.
+    """
+
     def __init__(
         self,
         ipc_uri: str,
@@ -32,9 +48,21 @@ class BaseClient:
         self.stop_future: asyncio.Future[None] | None = None
 
     def get_info(self) -> BaseInfo:
+        """Get the info class for this client.
+
+        Returns:
+            BaseInfo: The info class.
+        """
+
         raise NotImplementedError
 
     async def start(self) -> None:
+        """Start the client.
+
+        Connects to the IPC server and begins sending out this clients
+        info.
+        """
+
         if self.stop_future is None:
             self.stop_future = asyncio.Future()
 
@@ -43,6 +71,8 @@ class BaseClient:
         self.tasks.create_task(self._broadcast_info_loop())
 
     async def join(self) -> None:
+        """Wait until the client begins exiting."""
+
         assert self.stop_future and self.ipc.stop_future
 
         await asyncio.wait(
@@ -51,6 +81,8 @@ class BaseClient:
         )
 
     async def close(self) -> None:
+        """Shut down the client."""
+
         self.ipc.stop()
         await self.ipc.close()
 
@@ -58,6 +90,8 @@ class BaseClient:
         await self.tasks.wait_for_all()
 
     def stop(self) -> None:
+        """Tell the client to stop."""
+
         assert self.stop_future
         self.stop_future.set_result(None)
 

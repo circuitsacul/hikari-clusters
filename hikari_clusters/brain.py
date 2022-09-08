@@ -150,6 +150,7 @@ class Brain(BaseClient):
         self._waiting_for = value
 
     def get_info(self) -> BrainInfo:
+        # <<<docstring from superclass>>>
         assert self.ipc.uid
         return BrainInfo(uid=self.ipc.uid)
 
@@ -166,11 +167,7 @@ class Brain(BaseClient):
         loop.run_until_complete(self.close())
 
     async def start(self) -> None:
-        """Start the brain.
-
-        Returns as soon as all tasks have started.
-        """
-
+        # <<<docstring from superclass>>>
         self.stop_future = asyncio.Future()
 
         await self.server.start()
@@ -178,8 +175,7 @@ class Brain(BaseClient):
         self.tasks.create_task(self._main_loop())
 
     async def close(self) -> None:
-        """Shut the brain down."""
-
+        # <<<docstring from superclass>>>
         self.ipc.stop()
         await self.ipc.close()
 

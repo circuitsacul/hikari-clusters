@@ -119,11 +119,7 @@ class Server(BaseClient):
         loop.run_until_complete(self.close())
 
     async def start(self) -> None:
-        """Start the server.
-
-        Returns as soon as all tasks are completed. Returning does not mean
-        that the server is ready."""
-
+        # <<<docstring from superclass>>>
         await super().start()
 
         self.tasks.create_task(self._loop_cleanup_processes())
