@@ -171,18 +171,23 @@ class Brain(BaseClient):
         Returns as soon as all tasks have started.
         """
 
-        await super().start()
+        self.stop_future = asyncio.Future()
 
-        self.tasks.create_task(self._main_loop())
         await self.server.start()
+        await super().start()
+        self.tasks.create_task(self._main_loop())
 
     async def close(self) -> None:
         """Shut the brain down."""
 
+        self.ipc.stop()
+        await self.ipc.close()
+
         self.server.stop()
         await self.server.close()
 
-        await super().close()
+        self.tasks.cancel_all()
+        await self.tasks.wait_for_all()
 
     def _get_next_cluster_to_launch(self) -> tuple[int, list[int]] | None:
         if len(self.ipc.servers) == 0:

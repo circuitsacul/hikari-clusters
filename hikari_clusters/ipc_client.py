@@ -125,7 +125,9 @@ class IpcClient(IpcBase):
         """The IPC UID of the brain."""
 
         brains = self.get_clients(BrainInfo)
-        if len(brains) > 1:
+        if not brains:
+            return None
+        elif len(brains) > 1:
             _LOG.warning("More than one brain connected.")
         return brains[max(brains.keys())]
 

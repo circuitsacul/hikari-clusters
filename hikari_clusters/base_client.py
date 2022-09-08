@@ -35,9 +35,11 @@ class BaseClient:
         raise NotImplementedError
 
     async def start(self) -> None:
+        if self.stop_future is None:
+            self.stop_future = asyncio.Future()
+
         await self.ipc.start()
 
-        self.stop_future = asyncio.Future()
         self.tasks.create_task(self._broadcast_info_loop())
 
     async def join(self) -> None:
