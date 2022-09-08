@@ -27,7 +27,7 @@ import json
 import logging
 import pathlib
 import ssl
-from typing import Any, Iterable, TypeVar, cast
+from typing import Any, Iterable, TypeVar, Union, cast
 
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK
 from websockets.legacy import client
@@ -45,6 +45,12 @@ _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.INFO)
 
 __all__ = ("IpcClient",)
+
+_TO = Union[Iterable[Union[BaseInfo, int]], BaseInfo, int]
+
+
+def _parse_to(to: _TO) -> Iterable[int]:
+    return map(int, to) if isinstance(to, Iterable) else [int(to)]
 
 
 class IpcClient(IpcBase):
@@ -186,23 +192,21 @@ class IpcClient(IpcBase):
 
         self.tasks.create_task(self._start()).add_done_callback(_stop)
 
-    async def send_not_found_response(
-        self, to: Iterable[int], callback: int
-    ) -> None:
+    async def send_not_found_response(self, to: _TO, callback: int) -> None:
         """Respond to a command saying that the command was not found.
 
         Parameters
         ----------
-        to : Iterable[int]
+        to : Iterable[int | BaseInfo]
             The clients to send the response to.
         callback : int
             The command callback (:attr:`~payload.Command.callback`)
         """
 
-        await self._send(to, payload.ResponseNotFound(callback))
+        await self._send(_parse_to(to), payload.ResponseNotFound(callback))
 
     async def send_ok_response(
-        self, to: Iterable[int], callback: int, data: payload.DATA = None
+        self, to: _TO, callback: int, data: payload.DATA = None
     ) -> None:
         """Respond that the command *function* finished without any problems.
 
@@ -210,7 +214,7 @@ class IpcClient(IpcBase):
 
         Parameters
         ----------
-        to : Iterable[int]
+        to : Iterable[int | BaseInfo]
             The clients to send the response to.
         callback : int
             The command callback (:attr:`~payload.Command.callback`)
@@ -218,16 +222,14 @@ class IpcClient(IpcBase):
             The data to send with the response, by default None
         """
 
-        await self._send(to, payload.ResponseOk(callback, data))
+        await self._send(_parse_to(to), payload.ResponseOk(callback, data))
 
-    async def send_tb_response(
-        self, to: Iterable[int], callback: int, tb: str
-    ) -> None:
+    async def send_tb_response(self, to: _TO, callback: int, tb: str) -> None:
         """Respond that the command function raised an exception.
 
         Parameters
         ----------
-        to : Iterable[int]
+        to : Iterable[int | BaseInfo]
             The clients to send the response to.
         callback : int
             The command callback (:attr:`~payload.Command.callback`)
@@ -235,10 +237,12 @@ class IpcClient(IpcBase):
             The exception traceback.
         """
 
-        await self._send(to, payload.ResponseTraceback(callback, tb))
+        await self._send(
+            _parse_to(to), payload.ResponseTraceback(callback, tb)
+        )
 
     async def send_event(
-        self, to: Iterable[int], name: str, data: payload.DATA = None
+        self, to: _TO, name: str, data: payload.DATA = None
     ) -> None:
         """Dispatch an event.
 
@@ -254,11 +258,11 @@ class IpcClient(IpcBase):
             The data to send with the event, by default None
         """
 
-        await self._send(to, payload.Event(name, data))
+        await self._send(_parse_to(to), payload.Event(name, data))
 
     async def send_command(
         self,
-        to: Iterable[int],
+        to: _TO,
         name: str,
         data: payload.DATA = None,
         timeout: float = 3.0,
@@ -267,7 +271,7 @@ class IpcClient(IpcBase):
 
         Parameters
         ----------
-        to : Iterable[int]
+        to : Iterable[int | BaseInfo]
             The clients to send the command to.
         name : str
             The name of the command.
@@ -283,6 +287,7 @@ class IpcClient(IpcBase):
             if any.
         """
 
+        to = _parse_to(to)
         with self.callbacks.callback(to) as cb:
             await self._send(to, payload.Command(name, cb.key, data))
             await cb.wait(timeout)
@@ -363,7 +368,9 @@ class IpcClient(IpcBase):
         self, to: Iterable[int], pl_data: payload.PAYLOAD_DATA
     ) -> None:
         assert self.uid is not None
-        pl = payload.Payload(pl_data.opcode, self.uid, list(to), pl_data)
+        pl = payload.Payload(
+            pl_data.opcode, self.uid, list(map(int, to)), pl_data
+        )
         await self._raw_send(json.dumps(pl.serialize()))
 
     async def _raw_send(self, msg: str) -> None:

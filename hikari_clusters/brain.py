@@ -221,7 +221,7 @@ class Brain(BaseClient):
             server_uid, shards = to_launch
 
             await self.ipc.send_command(
-                [server_uid],
+                server_uid,
                 "launch_cluster",
                 {"shard_ids": shards, "shard_count": self.total_shards},
             )
