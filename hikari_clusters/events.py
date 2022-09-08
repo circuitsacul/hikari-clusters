@@ -40,8 +40,6 @@ class EventHandler:
 
     Parameters
     ----------
-    logger : :class:`~log.Logger`
-        The logger to use.
     event_kwargs : dict[str, Any], optional
         Extra kwargs to pass to event functions, default to None.
     """

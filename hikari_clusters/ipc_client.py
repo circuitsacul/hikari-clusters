@@ -56,17 +56,9 @@ class IpcClient(IpcBase):
         The uri of the ipc server.
     token : str
         The token required by the ipc server.
-    logger : :class:`~log.Logger`
-        The logger used by the clients parent.
     reconnect : bool
         Whether or not to try to reconnect after disconnection, by default
         True.
-    cmd_kwargs : dict[str, Any], optional
-        Command arguments to pass to :class:`~commands.CommandHandler`, by
-        default None.
-    event_kwargs : dict[str, Any], optional
-        Event arguments to pass to :class:`~events.EventHandler`, by
-        default None.
     certificate_path : pathlib.Path, optional
         Required for secure (wss) connections, by default None.
     """
