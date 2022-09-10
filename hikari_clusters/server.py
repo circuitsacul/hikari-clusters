@@ -103,6 +103,8 @@ class Server(BaseClient):
         ]
 
     def get_info(self) -> ServerInfo:
+        # <<<docstring from BaseClient>>>
+
         assert self.ipc.uid
         return ServerInfo(self.ipc.uid, [c.uid for c in self.clusters])
 
@@ -119,9 +121,9 @@ class Server(BaseClient):
         loop.run_until_complete(self.close())
 
     async def start(self) -> None:
-        # <<<docstring from superclass>>>
-        await super().start()
+        # <<<docstring from BaseClient>>>
 
+        await super().start()
         self.tasks.create_task(self._loop_cleanup_processes())
 
     async def _loop_cleanup_processes(self) -> None:

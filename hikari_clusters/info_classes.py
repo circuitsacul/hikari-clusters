@@ -44,16 +44,22 @@ class BaseInfo:
         BaseInfo._info_classes[cls._info_class_id] = cls
 
     def asdict(self) -> dict[str, Any]:
+        """Convert this info class to a dictionary."""
+
         dct = asdict(self)
         dct["_info_class_id"] = self._info_class_id
         return dct
 
     @staticmethod
     def fromdict(data: dict[str, Any]) -> BaseInfo:
+        """Convert a dictionary back into its info class."""
+
         cls = BaseInfo._info_classes[data.pop("_info_class_id")]
         return cls(**data)
 
     def __int__(self) -> int:
+        """The IPC UID of the client this info class represents."""
+
         return self.uid
 
 
@@ -105,6 +111,8 @@ class ClusterInfo(BaseInfo):
 
 @dataclass
 class BrainInfo(BaseInfo):
+    """A representation of a :class:`~brain.Brain`."""
+
     _info_class_id = 2
     uid: int
     """The ipc uid of the brain."""
