@@ -88,6 +88,8 @@ class Cluster(BaseClient):
         self.bot.cluster = self  # type: ignore
 
     def get_info(self) -> ClusterInfo:
+        # <<<docstring from BaseClient>>>
+
         assert self.ipc.uid
         return ClusterInfo(
             self.ipc.uid, self.server_uid, self.shard_ids, self.ready
@@ -118,7 +120,8 @@ class Cluster(BaseClient):
         return self._shard_count
 
     async def start(self, **kwargs: Any) -> None:
-        # <<<docstring from superclass>>>
+        # <<<docstring from BaseClient>>>
+
         await super().start()
 
         kwargs["shard_count"] = self.shard_count
@@ -127,9 +130,9 @@ class Cluster(BaseClient):
         await self.bot.start(**kwargs)
 
     async def close(self) -> None:
-        # <<<docstring from superclass>>>
-        await self.bot.close()
+        # <<<docstring from BaseClient>>>
 
+        await self.bot.close()
         await super().close()
 
 
