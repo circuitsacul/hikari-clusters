@@ -30,13 +30,17 @@ __all__ = ("ServerInfo", "ClusterInfo", "BaseInfo", "BrainInfo")
 
 class BaseInfo:
     uid: int
-    _next_info_class_id: int = 0
     _info_classes: dict[int, type[BaseInfo]] = {}
     _info_class_id: int
 
     def __init_subclass__(cls) -> None:
-        cls._info_class_id = BaseInfo._next_info_class_id
-        BaseInfo._next_info_class_id += 1
+        if not hasattr(cls, "_info_class_id"):
+            raise AttributeError(f"{cls} is missing _info_class_id.")
+        if used_by := BaseInfo._info_classes.get(cls._info_class_id):
+            raise ValueError(
+                f"_info_class_id {cls._info_class_id} is already used by "
+                f"{used_by}"
+            )
         BaseInfo._info_classes[cls._info_class_id] = cls
 
     def asdict(self) -> dict[str, Any]:
@@ -57,6 +61,7 @@ class BaseInfo:
 class ServerInfo(BaseInfo):
     """A representation of a :class:`~server.Server`."""
 
+    _info_class_id = 0
     uid: int
     """The ipc uid of the server."""
     cluster_uids: list[int]
@@ -67,6 +72,7 @@ class ServerInfo(BaseInfo):
 class ClusterInfo(BaseInfo):
     """A representation of a :class:`~cluster.Cluster`."""
 
+    _info_class_id = 1
     uid: int
     """The ipc uid of the cluster."""
     server_uid: int
@@ -99,5 +105,6 @@ class ClusterInfo(BaseInfo):
 
 @dataclass
 class BrainInfo(BaseInfo):
+    _info_class_id = 2
     uid: int
     """The ipc uid of the brain."""
