@@ -8,6 +8,40 @@ hikari-clusters allows you to scale your Discord bots horizontally by using mult
 
 See the #clusters channel in the hikari-py discord for help.
 
+```py
+# brain.py
+from hikari_clusters import Brain
+
+Brain(
+    host="localhost",
+    port=8765,
+    token="ipc token",
+    total_servers=1,
+    clusters_per_server=2,
+    shards_per_cluster=3,
+).run()
+```
+```py
+# server.py
+from hikari import GatewayBot
+from hikari_clusters import Cluster, ClusterLauncher, Server
+
+class MyBot(GatewayBot):
+    cluster: Cluster
+
+    def __init__(self):
+        super().__init__(token="discord token")
+
+        # load modules & events here
+
+Server(
+    host="localhost",
+    port=8765,
+    token="ipc token",
+    cluster_launcher=ClusterLauncher(MyBot),
+).run()
+```
+
 Run examples with `python -m examples.<example name>` (`python -m examples.basic`)
 
 <p align="center">
