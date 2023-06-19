@@ -15,18 +15,18 @@ documentation = "https://github.com/TrigonDev/hikari-clusters/wiki"
 keywords = ["hikari", "discord", "clustering", "bot", "ipc"]
 
 [tool.poetry.dependencies]
-python = ">=3.8.0,<3.11"
+python = ">=3.8.0,<3.12"
 hikari = "^2.0.0.dev105"
-websockets = "^10.1"
+websockets = "^11.0"
 pytest-cov = ">=3,<5"
 
-[tool.poetry.dev-dependencies]
-black = "^22.1"
-isort = "^5.9.3"
-mypy = "^0.991"
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+isort = "^5.12.0"
+mypy = "^1.3.0"
 flake8 = "^5.0.4"
-pytest = "^7.0.0"
-nox = "^2022.1.7"
+pytest = "^7.3.2"
+nox = "^2023.4.22"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
