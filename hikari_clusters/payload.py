@@ -110,7 +110,7 @@ class ResponseNotFound:
 
 
 PAYLOAD_DATA = Union[
-    Command, Event, ResponseOk, ResponseTraceback, ResponseNotFound,
+    Command, Event, ResponseOk, ResponseTraceback, ResponseNotFound
 ]
 
 OPCODES: dict[int, Type[PAYLOAD_DATA]] = {

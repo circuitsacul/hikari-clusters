@@ -24,7 +24,7 @@ class BaseInfo:
     def asdict(self) -> dict[str, Any]:
         """Convert this info class to a dictionary."""
 
-        dct = asdict(self)
+        dct: dict[str, Any] = asdict(self)  # type: ignore
         dct["_info_class_id"] = self._info_class_id
         return dct
 
