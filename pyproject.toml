@@ -17,7 +17,7 @@ keywords = ["hikari", "discord", "clustering", "bot", "ipc"]
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.12"
 hikari = "^2.0.0.dev105"
-websockets = "^11.0"
+websockets = ">=11,<13"
 pytest-cov = ">=3,<5"
 
 [tool.poetry.group.dev.dependencies]
