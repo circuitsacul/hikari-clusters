@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import traceback
-from typing import Any, Coroutine, Generator, Iterable, Type, TypeVar
+from typing import Any, Iterable, Type, TypeVar
 
 __all__ = ("TaskManager",)
 
@@ -39,7 +39,7 @@ class TaskManager:
 
     def create_task(
         self,
-        coro: Generator[Any, None, _T] | Coroutine[Any, None, _T],
+        coro: asyncio._CoroutineLike[_T],
         *,
         name: str | None = None,
         ignored_exceptions: Iterable[Type[Exception]] = tuple(),
