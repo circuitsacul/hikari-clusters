@@ -1,6 +1,6 @@
 [tool.black]
-line-length=79
-skip-magic-trailing-comma=true
+line-length = 79
+skip-magic-trailing-comma = true
 
 [tool.poetry]
 name = "hikari-clusters"
@@ -15,8 +15,8 @@ documentation = "https://github.com/TrigonDev/hikari-clusters/wiki"
 keywords = ["hikari", "discord", "clustering", "bot", "ipc"]
 
 [tool.poetry.dependencies]
-python = ">=3.8.0,<3.12"
-hikari = "^2.0.0.dev105"
+python = ">=3.9,<3.14"
+hikari = "^2.0.0"
 websockets = "^11.0"
 pytest-cov = ">=3,<5"
 
